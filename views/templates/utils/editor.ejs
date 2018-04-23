@@ -1,0 +1,37 @@
+<div style="height: 15%; background-color: #00A65A; vertical-align: middle; margin-top: 1%;">
+    <select style="margin-left: 3%; background-color: #00A65A; outline: 0; border: 0;" onchange="changeFont(this[this.selectedIndex].value)">
+        <option value="Andale Mono" style="font-family: Andale Mono;">Andale Mono</option>
+        <option value="Arial" style="font-family: Arial;">Arial</option>
+        <option value="Arial Black" style="font-family: Arial Black;">Arial Black</option>
+        <option value="Book Antiqua" style="font-family: Book Antiqua;">Book Antiqua</option>
+        <option value="Comic Sans MS" style="font-family: Comic Sans MS;">Comic Sans MS</option>
+        <option value="Courier New" style="font-family: Courier New;">Courier New</option>
+        <option value="Georgia" style="font-family: Georgia;">Georgia</option>
+        <option value="Helvetica" style="font-family: Helvetica;">Helvetica</option>
+        <option value="Impact" style="font-family: Impact;">Impact</option>
+        <option value="Open Sans" style="font-family: Open Sans;">Open Sans</option>
+        <option value="Tahoma" style="font-family: Tahoma;">Tahoma</option>
+        <option value="Terminal" style="font-family: Terminal;">Terminal</option>
+        <option value="Times New Roman" style="font-family: Times New Roman;">Times New Roman</option>
+        <option value="Trebuchet MS" style="font-family: Trebuchet MS;">Trebuchet MS</option>
+        <option value="Verdana" style="font-family: Verdana;">Verdana</option>
+        <option value="Webdings" style="font-family: Webdings;">Webdings</option>
+        <option value="Wingdings" style="font-family: Wingdings;">Wingdings</option>
+    </select>
+
+    <select style="margin-left: 3%; background-color: #00A65A; outline: 0; border: 0;" onchange="changeSize(this[this.selectedIndex].value)">
+        <option value="1">Very small</option>
+        <option value="2">small</option>
+        <option value="3">Normal</option>
+        <option value="4">Medium-large</option>
+        <option value="5">Big</option>
+        <option value="6">Very big</option>
+        <option value="7">Maximum</option>
+    </select>
+    <input type="button" value="B" onclick="bold()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+    <input type="button" value="I" onclick="italic()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+    <input type="button" value="U" onclick="underlined()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+
+</div>
+<div id="mail_send_content_div" class="scroll" contenteditable="true" spellcheck="true" style="height: 250px; overflow-y: scroll; outline: none; padding: 1%; border: 1px solid black;"></div>
+<textarea name="content" id ="mail_send_content" style ="display: none;"></textarea>

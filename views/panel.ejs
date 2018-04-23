@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+    <header>
+        <title>Panel</title>
+
+        <link rel="stylesheet" type="text/css" href="/stylesheets/panel_style.css">
+
+        <script type="text/javascript" src="/javascript/permission_manager.js"></script>
+        <script type="text/javascript" src="/javascript/editor.js"></script>
+        <script type="text/javascript" src="/javascript/utils.js"></script>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+            }
+            html,body{
+                padding: 0;
+                width: 100%;
+                background-color: #ECF0F5;
+            }
+            .article {
+                margin-top: 1%;
+                padding: 1% 1% 1% 3%;
+                border-radius: 10px;
+                border-top: 2px solid #00A65A;
+                border-left: 2px solid #00A65A;
+                border-bottom: 2px solid #006335;
+                border-right: 2px solid #006335;
+            }
+            .article:last-child {
+                margin-bottom: 3%;
+            }
+            .mail-info p {
+                display: inline-block;
+            }
+            .scroll::-webkit-scrollbar-track {
+                -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+                background-color: #B8FFC4;
+            }
+            .scroll::-webkit-scrollbar {
+                width: 10px;
+                background-color: #B8FFC4;
+            }
+            .scroll::-webkit-scrollbar-thumb {
+                -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+                background-color: #00A65A;
+            }
+
+            .mail a {
+                display: block;
+            }
+            a {
+                text-decoration: none !important;
+            }
+            .mail a:hover {
+                transition: background-color 1s;
+                background-color: #DEFFE4;
+                cursor: pointer;
+            }
+
+            .table_border td, .table_border th {
+                border: 2px solid black;
+                padding: 8px;
+            }
+        </style>
+
+        <script>
+
+            /*
+            setInterval(function() {
+                $(window).ready(function () {
+                    $("#turtle").animate({
+                        marginTop: '+=10%'
+                    }, 1000, function () {
+                        $("#turtle").animate({
+                            marginTop: '-=10%'
+                        }, 250);
+                    });
+
+                    var audio = new Audio('/sounds/IamSneakyTurtle.mp3');
+                    audio.play();
+                });
+            }, 1000*10);*/
+
+            var weekObject = <%- JSON.stringify(week) %>;
+            var weekPlanning = <%- JSON.stringify(weekPlanning) %>;
+            var page = <%- JSON.stringify(page) %>;
+
+            var notTheTeacherPerms;
+            var from = 0;
+            window.onload = function () {
+                $.getJSON(window.origin + '/json/news/0&2', function (data) {
+                    addNewsElements(data);
+                });
+
+                var itemOptionPerms = ['agenda.additem.note', 'agenda.additem.test', 'agenda.additem.task', 'agenda.additem.preparation', 'agenda.additem.materials', 'agenda.additem.topic'];
+                for (var index in itemOptionPerms) {
+                    !function outer(index) {
+                        hasPermission(itemOptionPerms[index], function (result) {
+                            if (result) {
+                                var optionElement = document.createElement('option');
+                                optionElement.innerHTML = itemOptionPerms[index].replace('agenda.additem.', '');
+                                var copyElement = optionElement.cloneNode(true);
+                                document.getElementById('agenda-edit-item-window-select').appendChild(copyElement);
+                            }
+                        });
+                    }(index)
+                }
+
+                hasPermission('agenda.additem.nottheteacher', function (result) {
+                    if (result) {
+                        notTheTeacherPerms = true;
+                    } else {
+                        notTheTeacherPerms = false;
+                    }
+                });
+
+                hasPermission('admin.panel', function (result) {
+                    if (result) {
+                        document.getElementById('admin_page_button').style.display = 'initial';
+                    }
+                });
+            }
+
+            var clicks = 0;
+
+            //easter egg: can't touch this
+            function playSound() {
+                clicks++;
+                if (clicks == 5) {
+                    var audio = new Audio('/sounds/ucanttouchthis.mp3');
+                    audio.play();
+                    clicks = 0;
+                }
+            }
+
+            //change to other module
+            function changeModule(id) {
+                var divs = document.getElementsByClassName('module');
+                for (var i = 0; i < divs.length; i++) {
+                    if (divs[i].style.display == 'block') {
+                        if (id != divs[i].id) {
+                            $("#" + divs[i].id).fadeOut("fast", function () {
+                                divs[i].style.display = 'none';
+                                $("#" + id).fadeIn("fast", function () {
+                                    document.getElementById(id).style.display = 'block';
+                                });
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+
+
+            window.addEventListener("load", function(){
+                //first check if execCommand and contentEditable attribute is supported or not.
+                if(document.contentEditable != undefined && document.execCommand != undefined) {
+                    alert("HTML5 Document Editing API Is Not Supported");
+                } else {
+                    document.execCommand('styleWithCSS', false, true);
+                }
+            }, false);
+
+            function changeFont(font) {
+                document.execCommand("fontName", false, font);
+            }
+
+            function changeSize(size) {
+                document.execCommand("fontsize", false, size);
+            }
+
+            function bold() {
+                document.execCommand('bold', false, null);
+            }
+
+            function italic() {
+                document.execCommand('italic', false, null);
+            }
+
+            function underlined() {
+                document.execCommand('underline', false, null);
+            }
+            
+            function logout() {
+                window.location = window.origin + "/logout";
+            }
+
+            function postArticle() {
+                document.getElementById('news_description_content').value = document.getElementById('news_content').innerHTML;
+                document.getElementById('news_add_form').submit();
+            }
+
+            function removeArticle(id) {
+                var formElement = document.getElementById('news_remove_form');
+
+                var inputElement = document.createElement('input');
+                inputElement.setAttribute('type', 'text');
+                inputElement.setAttribute('name', 'article_id');
+                inputElement.setAttribute('value', id);
+                inputElement.setAttribute('style', 'display: none;');
+
+                formElement.appendChild(inputElement);
+                formElement.submit();
+            }
+
+            function openArticleEditor(id, title, description) {
+                var mainElement = document.getElementById('news_editor');
+                mainElement.style.display = 'block';
+
+                var titleElement = document.getElementById('news_edit_title');
+                titleElement.value = title;
+
+                var descriptionElement = document.getElementById('news_edit_content');
+                descriptionElement.innerHTML = description;
+
+                var articleIdElement = document.getElementById('news_edit_id');
+                articleIdElement.value = id;
+            }
+
+            function updateArticle() {
+                document.getElementById('news_edit_description').value = document.getElementById('news_edit_content').innerHTML;
+                document.getElementById('news_edit_form').submit();
+            }
+
+            function addNewsElements(data) {
+                for (var index in data) {
+                    var newsElement = document.getElementById('news_articles');
+
+                    var divElement = document.createElement('div');
+                    divElement.setAttribute('class', 'article');
+                    divElement.setAttribute('id', 'article_' + data[index].id);
+                    divElement.innerHTML = '<p style="font-size: 18px">' + data[index].title + '</p><div>' + data[index].description + '</div><p style="text-align: right; font-size: 10px">' + data[index].date + '</p>';
+
+                    newsElement.insertBefore(divElement, document.getElementById('load_more_articles_button'));
+                }
+
+                hasPermission('news.edit', function (result) {
+                    if (result) {
+                        for (var index in data) {
+                            var buttonElement = document.createElement('button');
+                            buttonElement.setAttribute('style', 'background-color: orange; border: none; padding: 5px; color: white;');
+                            buttonElement.setAttribute('onclick', 'openArticleEditor(' + data[index].id + ', \'' + data[index].title + '\', \'' + data[index].description + '\')');
+                            buttonElement.innerHTML = 'Edit article';
+                            document.getElementById('article_' + data[index].id).appendChild(buttonElement);
+                        }
+                    }
+                });
+
+                hasPermission('news.remove', function (result) {
+                    if (result) {
+                        for (var index in data) {
+                            var buttonElement = document.createElement('button');
+                            buttonElement.setAttribute('style', 'background-color: red; border: none; padding: 5px; color: white;');
+                            buttonElement.setAttribute('onclick', 'removeArticle(' + data[index].id + ')');
+                            buttonElement.innerHTML = 'Remove article';
+                            document.getElementById('article_' + data[index].id).appendChild(buttonElement);
+                        }
+                    }
+                });
+            }
+
+            function loadMoreNews() {
+                from += 3;
+                $.getJSON(window.origin + '/json/news/' + from + '&' + (from + 2), function (data) {
+                    addNewsElements(data);
+                });
+            }
+            
+            function openAdminPannel() {
+                window.location = window.origin + '/admin';
+            }
+
+            function closePopup() {
+                document.getElementById('background_overlay').style.display = 'none';
+
+                if (document.getElementById('agenda_items_window').style.display != 'none') {
+                    var divElement = document.getElementById('agenda_items');
+
+                    var isClear = true;
+                    while (isClear) {
+                        if (divElement.lastChild.tagName == 'H3') {
+                            divElement.lastChild.innerHTML = 'TODO';
+                            isClear = false;
+                        } else {
+                            divElement.removeChild(divElement.lastChild);
+                        }
+
+                    }
+
+                    document.getElementById('agenda_items_window').style.display = 'none';
+                } else if (document.getElementById('subject_upload_window').style.display != 'none') {
+                    document.getElementById('subject_upload_window').style.display = 'none';
+                } else if (document.getElementById('subject_addfolder_window').style.display != 'none') {
+                    document.getElementById('subject_addfolder_window').style.display = 'none';
+                } else if (document.getElementById('subject_note_open_window').style.display != 'none') {
+                    document.getElementById('subject_note_open_window').style.display = 'none';
+                } else if (document.getElementById('subject_note_add_window').style.display != 'none') {
+                    document.getElementById('subject_note_add_window').style.display = 'none';
+                } else if (document.getElementById('agenda-edit-item-window').style.display != 'none') {
+                    document.getElementById('agenda-edit-item-window').style.display = 'none';
+                }
+            }
+        </script>
+    </header>
+
+    <body>
+        <!--
+        <div id="turtle" style="top: 0; margin-left: 65%; position: absolute; margin-top: -10%; z-index: 99 !important;">
+            <img style="transform: rotate(180deg); height: 40%; width: 40%;" src="/images/easteregg/IamSneakyTurtle.png">
+        </div> -->
+
+        <div class="header" style="background-color: #3C8DBC; width: 100%; height: 75px; position: fixed; z-index: 10; padding: 0; top: 0;">
+            <div class="logo">
+                <a onclick="playSound()"><img class="logo-img" src="/images/logo/logo_scooly.png" ></a>
+            </div>
+
+            <div class="alerts">
+                <img class="logo-img" style="margin-right: 10%" src="/images/icons/appointment_icon.png">
+                <img class="logo-img" style="margin-right: 10%" src="/images/icons/message_icon.png">
+                <a onclick="logout()" style="cursor: pointer;"><img class="logo-img" style="margin-right: 10%" src="/images/icons/logout_icon.png"></a>
+            </div>
+        </div>
+
+        <div class="menu" style="background-color: #222D32; width: 300px; top: 75px; height: 94%; position: fixed; z-index: 20">
+            <div>
+                <div style="background-color: #1A2226;">
+                    <a href="/myprofile" style="vertical-align: middle; display: block;">
+                        <div style="padding: 5%;">
+                            <p style="color: #4b646f; font-size: 20px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-bottom: 0;">
+                                <img id="profile-img" alt="Profile image"><span title="<%= username %>"><%= username %></span>
+                                <script>
+                                    var imgElement = document.getElementById('profile-img');
+                                    imgElement.setAttribute('src', window.origin + '/avatars/<%= profile_pic %>');
+                                </script>
+                            </p>
+                        </div>
+                    </a>
+                </div>
+
+                <ul class="menu">
+                    <li class="menu-item">
+                        <a onclick="changeModule('news')"><img class="menu_img" src="/images/icons/home_icon.png">Home</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <!--<a onclick="changeModule('messages')"><img class="menu_img" src="/images/icons/message_icon.png"><%= object.messages %></a>-->
+                        <a href="https://webmail.migadu.com"><img class="menu_img" src="/images/icons/message_icon.png"><%= object.messages %></a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="changeModule('schoolschedule')"><img class="menu_img" src="/images/icons/diary_icon.png"><%= object.schoolschedule %></a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="changeModule('subject')"><img class="menu_img" src="/images/icons/document_icon.png"><%= object.subjects %></a>
+                    </li>
+
+                    <li class="menu-item">
+                        <!--<a onclick="changeModule('mydocuments')"><img class="menu_img" src="/images/icons/document_icon.png"><%= object.documents %></a>--->
+                        <a onclick="alert('KOOP U EEN FUCKING USB STICK!!!')"><img class="menu_img" src="/images/icons/document_icon.png"><%= object.documents %></a>
+                    </li>
+
+                    <li id="admin_page_button" class="menu-item" style="display: none;">
+                        <a onclick="openAdminPannel()"><img class="menu_img" src="/images/icons/admin_panel_icon.png">Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="margin-left: 300px; margin-top: 75px; padding: 50px; min-width: 750px;">
+            <% include templates/news.ejs %>
+
+            <% include templates/messages.ejs %>
+
+            <% include templates/schoolschedule.ejs %>
+
+            <% include templates/subject.ejs %>
+
+            <% include templates/mydocuments.ejs %>
+
+        </div>
+
+        <div id="background_overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; display: none;" onclick="closePopup()">
+            <div style="position: fixed; top: 75px; left: 300px; right: 0; bottom: 0; background: rgba(0,0,0,0.75);">
+            </div>
+        </div>
+
+        <div id="agenda_items_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div id="agenda_items" style="padding: 0 5% 3% 5%;">
+                    <h3>TODO</h3>
+                </div>
+            </div>
+        </div>
+
+        <div id="agenda-edit-item-window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div id="agenda_item" style="padding: 0 5% 3% 5%;">
+                    <h3>Item editor</h3>
+
+                    <form id="agenda-edit-item-window-form" method="POST">
+                        <div id="agenda-edit-item-window-header">
+                            <p>Type</p>
+                            <select id="agenda-edit-item-window-select" onchange="addGroupSelector('agenda-edit-item-window-select', 'agenda-edit-item-window-group-name')" name="type"></select>
+
+                            <p>Date</p>
+                            <input type="date" id="agenda-edit-item-window-date" name="delivery_date" oninput="checkPeriod(this, 'agenda-edit-item-window-period')" value="">
+
+                            <p>Period</p>
+                            <select id="agenda-edit-item-window-period" onchange="changeClass(this, 'agenda-edit-item-window-date', 'agenda-edit-item-window-class')" name="period">
+                            </select>
+                        </div>
+
+                        <p>Title</p>
+                        <input type="text" id="agenda-edit-item-window-title" name="title" maxlength="30" placeholder="Title">
+
+                        <div id="agenda-edit-item-window-group-name">
+                            <p>Class</p>
+                            <input type="text" id="agenda-edit-item-window-class" name="group_name" placeholder="Class" readonly>
+                        </div>
+
+                        <input type="text" style="display: none;" id="agenda-edit-item-window-item-id" name="id">
+
+                        <input type="submit" onclick="commitItemForm()" value="Submit">
+
+                        <script>
+                            generateEditor(document.getElementById('agenda-edit-item-window-group-name'), 'agenda-edit-item-window-description', 'agenda-edit-item-window-content', 'description')
+                        </script>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="subject_upload_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div style="margin: 1% 3% 1% 3%;">
+                    <h3>Upload a document</h3>
+
+                    <form method="POST" ref="uploadForm" action="/panel/uploadsubjectfile" encType="multipart/form-data">
+                        <input type="text" id="subject_upload_path" name="path" style="display: none;">
+                        <input type="file" name="file">
+
+                        <input type="submit">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="subject_addfolder_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div style="margin: 1% 3% 1% 3%;">
+                    <h3>Upload a document</h3>
+
+                    <form id="subject_folder_form" method="POST" action="/panel/addfolder">
+                        <input type="text" id="subject_folder_path" name="path" style="display: none;">
+                        <input type="text" id="subject_folder_name" name="directory">
+
+                        <input onclick="addFolderFormSubmit()" type="submit">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="subject_note_open_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div style="margin: 1% 3% 1% 3%;">
+                    <h3 id="subject_note_open_window_file"></h3>
+
+                    <h5 id="subject_note_open_window_title" style="margin-left: 1%; border: 1px solid black; width: 20%; padding: 1%;"></h5>
+
+                    <div id="subject_note_open_window_description" style="margin-left: 1%; border: 1px solid black; padding: 0.5%;"></div>
+
+                    <button id="subject_note_open_window_edit" style="display: none; background-color: red; border: none; margin-left: 1%; margin-top: 5px; padding: 0.5%;">Edit note</button>
+                    <script>
+                        hasPermission("subject.note.edit", function (result) {
+                            if (result) {
+                                document.getElementById('subject_note_open_window_edit').style.display = 'initial';
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <div id="subject_note_add_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div style="margin: 1% 3% 1% 3%;">
+                    <h3>Add a note</h3>
+
+                    <form method="POST" action="/panel/addnote">
+                        <input type="text" name="path" id="subject-note-add-path" style="display: none;">
+                        <input type="text" name="id" id="subject-note-add-id" style="display: none;">
+                        <input type="text" name="title" id="subject-note-add-title" placeholder="Title"><br>
+                        <input type="text" name="description" id="subject-note-add-description" placeholder="Description"><br>
+                        <input type="checkbox" id="subject-note-add-checkbox" name="public"><br>
+                        <input type="submit"><br>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+            if (page.length > 0) {
+                changeModule(page)
+            }
+        </script>
+    </body>
+</html>

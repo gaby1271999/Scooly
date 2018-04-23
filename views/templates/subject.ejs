@@ -1,0 +1,519 @@
+<style>
+    #subject_list {
+        margin: 1% 3% 1% 3%;
+    }
+
+    .subject_fs_item {
+        padding-left: 10px;
+    }
+
+    .subject_list_item {
+         padding: 1%;
+         border-bottom: 1px solid #00A65A;
+    }
+
+    .subject_list_item:last-child {
+        border-bottom: none;
+    }
+
+    #subject_menu {
+        display: none;
+        width: 100%;
+    }
+
+    #subject_menu_items {
+        margin: 1% 3% 1% 3%;
+        list-style-type: none;
+        font-size: 0;
+    }
+
+    #subject_menu_items li {
+        display: inline-block;
+        width: 20%;
+        text-align: center;
+        border-collapse: collapse;
+        border: 1px solid black;
+        border-right: none;
+        font-size: 15px;
+    }
+
+    #subject_menu_items li:last-child {
+        border-right: 1px solid black;
+    }
+
+    #subject_menu_items li a {
+        color: white;
+        display: block;
+        background-color: #00A65A;
+        cursor: pointer;
+    }
+
+    #subject_menu_items li a:hover {
+        background-color: #5bb75b;
+        color: black;
+        transition: 1s;
+    }
+</style>
+
+<div class="module" id="subject" style="background-color: white; border-radius: 10px; margin: 3% 3% 0 3%; min-height: 200px; overflow: hidden; display: none">
+    <div style="height: 5px; background-color: #00A65A;"></div>
+    <p style="margin: 1% 0 0 3%; font-size: 25px"><%= object.schoolschedule %></p>
+
+    <div id="subjects" style="display: initial;">
+        <ul id="subject_list" style="list-style-type: none; border-radius: 10px; border-top: 2px solid #00A65A; border-left: 2px solid #00A65A; border-bottom: 2px solid #006335; border-right: 2px solid #006335;">
+            <script>
+                $.getJSON(window.origin + '/json/subjects', function (subjects) {
+                    if (!isClassFile(subjects)) {
+                        for (var index in subjects) {
+                            var subject = subjects[index];
+
+                            var liElement = document.createElement('li');
+                            liElement.setAttribute('class', 'subject_list_item');
+                            liElement.innerHTML = '<a onclick="openSubject(\'' + subject + '\')" style="cursor: pointer; display: block; color: black;" id="subject_item_' + index + '">' + subject + '</a>';
+                            document.getElementById('subject_list').appendChild(liElement);
+                        }
+                    } else {
+                        for (var index in subjects) {
+                            var subject = subjects[index];
+
+                            var liElement = document.createElement('li');
+                            liElement.setAttribute('class', 'subject_list_item');
+                            var aElement = document.createElement('a');
+                            aElement.setAttribute('style', 'cursor: pointer; display: block; color: black;');
+                            aElement.setAttribute('id', 'subject_item_' + index);
+                            aElement.setAttribute('onclick', 'openClassSubject(\'' + subject.subject + '\', \'' +  subject.class + '\')');
+                            aElement.innerHTML = subject.subject + '  ' + subject.class;
+                            liElement.appendChild(aElement);
+                            document.getElementById('subject_list').appendChild(liElement);
+                        }
+                    }
+                });
+            </script>
+        </ul>
+    </div>
+
+    <div id="subject_menu">
+        <ul id="subject_menu_items">
+            <li class="subect_menu_item">
+                <a onclick="subjectPageBack()">Go back</a>
+            </li>
+
+            <li class="subect_menu_item">
+                <a onclick="addFolder()">addFolder</a>
+            </li>
+
+            <li class="subect_menu_item">
+                <a>remove</a>
+            </li>
+
+            <li class="subect_menu_item">
+                <a onclick="addSubjectFile()">uploadFile</a>
+            </li>
+
+            <li class="subect_menu_item">
+                <a>uploadFile</a>
+            </li>
+        </ul>
+    </div>
+
+    <div id="subject_fs" style="display: none; margin: 1% 3% 1% 3%;">
+        <table id="subject_fs_table" style="border-radius: 10px; border: 2px solid #00A65A; width: 100%;">
+            <tr id="subject_fs_index" style="border-bottom: 1px solid black">
+                <script>
+                    hasPermission("subject.file.visability" , function (perms) {
+                        var element = document.getElementById('subject_fs_index');
+
+                        var th1Element = document.createElement('th');
+                        th1Element.setAttribute('style', perms ? 'width: 60%;' : 'width: 70%;' + ' border-right: 1px solid black;');
+                        th1Element.innerHTML = '<span style="margin-left: 10px;">File name</span>';
+                        element.appendChild(th1Element);
+
+                        var th2Element = document.createElement('th');
+                        th2Element.setAttribute('style', 'width: 15%; border-right: 1px solid black;');
+                        th2Element.innerHTML = '<span style="margin-left: 10px;">File size</span>';
+                        element.appendChild(th2Element);
+
+                        var th3Element = document.createElement('th');
+                        th3Element.setAttribute('style', 'width: 15%; border-right: 1px solid black;');
+                        th3Element.innerHTML = '<span style="margin-left: 10px;">Note</span>';
+                        element.appendChild(th3Element);
+
+                        if (perms) {
+                            var th4Element = document.createElement('th');
+                            th4Element.setAttribute('style', 'width: 10%;');
+                            th4Element.innerHTML = '<span style="margin-left: 10px;">Select</span>';
+                            element.appendChild(th4Element);
+                        }
+
+                    });
+                </script>
+                <!--<p style="display: inline-block; width: 60%; margin-left: 1%; border-right: 1px solid black; margin: 0;">File name</p>
+                <p style="display: inline-block; width: 15%; border-right: 1px solid black; margin: 0;">File size</p>
+                <p style="display: inline-block; width: 10%; border-right: 1px solid black; margin: 0;">select</p>
+                <p style="display: inline-block; margin: 0;">note</p>-->
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script>
+    var subjectNoteAdd;
+    hasPermission("subject.note.add" , function (perms) {
+        subjectNoteAdd = perms;
+    });
+
+    var subjectFileVisability;
+    hasPermission("subject.file.visability" , function (perms) {
+        subjectFileVisability = perms;
+    });
+
+    function openClassSubject(subject, className) {
+        document.getElementById('subjects').style.display = 'none';
+
+        hasPermission('subjetc.fs.editor', function (result) {
+            if (result) {
+                document.getElementById('subject_menu').style.display = 'initial';
+            }
+        });
+
+        $.getJSON(window.origin + '/json/documents/' + subject + '&' + className, function (files) {
+            document.getElementById('subject_upload_path').value = subject + '/' + className;
+
+            for (var index in files) {
+                var file = files[index];
+
+                var trElement = document.createElement('tr');
+                var tdElement1 = document.createElement('td');
+                tdElement1.setAttribute('style', 'width: 60%;');
+                var aElement = document.createElement('a');
+                aElement.setAttribute('class', 'subject_fs_item');
+                aElement.setAttribute('style', 'cursor: pointer; color: black;');
+                aElement.innerHTML = file.name;
+
+                if (file.type === 0) {
+
+                    var jsonObject = JSON.stringify(file);
+
+                    aElement.setAttribute('onClick', 'openDir(\'' + subject + '\', \'' + className + '\', \'' + file.name + '\', \'' + jsonObject + '\')');
+                } else {
+                    var uri = className + '/' + file.name;
+                    var result = encodeURIComponent(uri);
+
+                    aElement.setAttribute('href', window.origin + '/download/' + subject + '&' + result);
+                }
+
+                tdElement1.appendChild(aElement);
+
+                trElement.appendChild(tdElement1);
+
+                var tdElement2 = document.createElement('td');
+                tdElement2.setAttribute('style', 'width: 15%;');
+                tdElement2.innerHTML = '<span class="subject_fs_item">' + file.size + '</span>';
+                trElement.appendChild(tdElement2);
+
+                var tdElement3 = document.createElement('td');
+                tdElement3.setAttribute('style', 'width: 15%;');
+                var aNoteElement = document.createElement('a');
+                aNoteElement.setAttribute('style', 'cursor: pointer; color: black;')
+                if (subjectNoteAdd) {
+                    if (file.note == undefined) {
+                        aNoteElement.setAttribute('onclick', 'addNote(\'' + subject + '/' + className + '/' + file.name + '\')');
+                        aNoteElement.innerHTML = '<span class="subject_fs_item">add note</span>';
+                    } else {
+                        var jsonObject = JSON.stringify(file.note);
+
+                        aNoteElement.setAttribute('onclick', 'openNote(\'' + file.name + '\', \'' + jsonObject + '\')');
+                        aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
+                    }
+                }
+                tdElement3.appendChild(aNoteElement);
+                trElement.appendChild(tdElement3);
+
+                var tdElement4 = document.createElement('td');
+                tdElement4.setAttribute('style', 'width: 10%;');
+                if (subjectFileVisability) {
+                    console.log(file.visible)
+                    tdElement4.innerHTML = '<span class="subject_fs_item"><input onchange="changeVisability(this, \'' + subject + '/' + className + '/' + file.name + '\')" type="checkbox" ' + (file.visible ? 'checked' : '') + '></span>';
+                }
+                trElement.appendChild(tdElement4);
+
+                document.getElementById('subject_fs_table').appendChild(trElement);
+            }
+
+            document.getElementById('subject_fs').style.display = 'block';
+        });
+    }
+
+    function openSubject(subject) {
+        document.getElementById('subjects').style.display = 'none';
+
+        document.getElementById('subject_menu').style.display = 'initial';
+
+        $.getJSON(window.origin + '/json/documents/' + subject + '&null', function (files) {
+            console.log(files)
+
+            for (var index in files) {
+                /*
+                var file = files[index];
+
+                var liElement = document.createElement('li');
+                liElement.setAttribute('class', 'subject_fs_item');
+                var aElement = document.createElement('a');
+                aElement.setAttribute('style', 'cursor: pointer; display: block; color: black;');
+                aElement.innerHTML = file.name;
+
+                if (typeof file === 'object') {
+                    var jsonObject = JSON.stringify(file);
+
+                    aElement.setAttribute('onClick', 'openDir(\'' + subject + '\', \'' + null + '\', \'' + file.name + '\', \'' + jsonObject + '\')');
+                } else {
+                    aElement.setAttribute('href', window.origin + '/download/' + subject + '&' + file.name);
+                }
+
+                liElement.appendChild(aElement);
+                document.getElementById('subject_fs_list').appendChild(liElement);*/
+
+                var file = files[index];
+
+                var trElement = document.createElement('tr');
+                var tdElement1 = document.createElement('td');
+                tdElement1.setAttribute('style', 'width: 60%;');
+                var aElement = document.createElement('a');
+                aElement.setAttribute('class', 'subject_fs_item');
+                aElement.setAttribute('style', 'cursor: pointer; color: black;');
+                aElement.innerHTML = file.name;
+
+                if (file.type === 0) {
+
+                    var jsonObject = JSON.stringify(file);
+
+                    aElement.setAttribute('onClick', 'openDir(\'' + subject + '\', \'' + null + '\', \'' + file.name + '\', \'' + jsonObject + '\')');
+                } else {
+                    var uri = className + '/' + file.name;
+                    var result = encodeURIComponent(uri);
+
+                    aElement.setAttribute('href', window.origin + '/download/' + subject + '&' + result);
+                }
+
+                tdElement1.appendChild(aElement);
+
+                trElement.appendChild(tdElement1);
+
+                var tdElement2 = document.createElement('td');
+                tdElement2.setAttribute('style', 'width: 15%;');
+                tdElement2.innerHTML = '<span class="subject_fs_item">' + file.size + '</span>';
+                trElement.appendChild(tdElement2);
+
+                var tdElement3 = document.createElement('td');
+                tdElement3.setAttribute('style', 'width: 15%;');
+                var aNoteElement = document.createElement('a');
+                aNoteElement.setAttribute('style', 'cursor: pointer; color: black;')
+                if (file.note != undefined) {
+                    var jsonObject = JSON.stringify(file.note);
+
+                    aNoteElement.setAttribute('onclick', 'openNote(\'' + file.name + '\', \'' + jsonObject + '\')');
+                    aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
+                }
+                tdElement3.appendChild(aNoteElement);
+                trElement.appendChild(tdElement3);
+
+                document.getElementById('subject_fs_table').appendChild(trElement);
+            }
+
+            document.getElementById('subject_fs').style.display = 'block';
+        });
+    }
+
+    function isClassFile(files) {
+        for (var index in files) {
+            var object = files[index];
+            if (object.class != undefined) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function openDir(subject, className, dir, jsonString) {
+        var object = JSON.parse(jsonString);
+
+        var inputElement = document.getElementById('subject_upload_path');
+        var args = inputElement.value.split('/');
+        var replacement = '';
+        for (var i = 2; i < args.length; i++) {
+            if (i > 2) {
+                replacement += '/';
+            }
+
+            replacement += args[i];
+        }
+
+        inputElement.value += '/' + dir.replace(replacement + '/', '');
+
+        var tableElemenet = document.getElementById('subject_fs_table');
+
+        while (tableElemenet.children.length > 1) {
+            tableElemenet.removeChild(tableElemenet.lastChild);
+        }
+
+        for (var index in object.files) {
+            var file = object.files[index];
+
+            var trElement = document.createElement('tr');
+            var tdElement1 = document.createElement('td');
+            var aElement = document.createElement('a');
+            aElement.setAttribute('class', 'subject_fs_item');
+            aElement.setAttribute('style', 'cursor: pointer; display: block; color: black;');
+            aElement.innerHTML = file.name;
+
+            if (file.type === 0) {
+                var jsonObject = JSON.stringify(file);
+
+                aElement.setAttribute('onClick', 'openDir(\'' + subject + '\', \'' + className + '\', \'' + dir + '/' + file.name + '\', \'' + jsonObject + '\')');
+            } else {
+                var uri = (className != 'null' ? className + '/' : '') + dir + '/' + file.name;
+                var result = encodeURIComponent(uri);
+
+                aElement.setAttribute('href', window.origin + '/download/' + subject + '&' + result);
+            }
+
+            tdElement1.appendChild(aElement);
+            trElement.appendChild(tdElement1);
+
+            var tdElement2 = document.createElement('td');
+            tdElement2.setAttribute('style', 'width: 15%;');
+            tdElement2.innerHTML = '<span class="subject_fs_item">' + file.size + '</span>';
+            trElement.appendChild(tdElement2);
+
+            var tdElement3 = document.createElement('td');
+            tdElement3.setAttribute('style', 'width: 15%;');
+            var aNoteElement = document.createElement('a');
+            aNoteElement.setAttribute('style', 'cursor: pointer; color: black;');
+
+            if (file.note != undefined) {
+                var jsonObject = JSON.stringify(file.note);
+
+                aNoteElement.setAttribute('onclick', 'openNote(\'' + dir + '/' + file.name + '\', \'' + jsonObject + '\')');
+                aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
+            } else {
+                if (subjectNoteAdd) {
+                    aNoteElement.setAttribute('onclick', 'addNote(\'' + subject + '/' + className + '/' + dir + '/' + file.name + '\')');
+                    aNoteElement.innerHTML = '<span class="subject_fs_item">add note</span>';
+                }
+            }
+            tdElement3.appendChild(aNoteElement);
+            trElement.appendChild(tdElement3);
+
+            var tdElement4 = document.createElement('td');
+            tdElement4.setAttribute('style', 'width: 10%;');
+            if (subjectFileVisability) {
+                tdElement4.innerHTML = '<span class="subject_fs_item"><input type="checkbox" onchange="changeVisability(this, \'' + subject + '/' + className + '/' + dir + '/' + file.name + '\')" ' + (file.visible ? 'checked' : '') + '></span>';
+            }
+            trElement.appendChild(tdElement4);
+
+            document.getElementById('subject_fs_table').appendChild(trElement);
+        }
+    }
+
+    function addSubjectFile() {
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('subject_upload_window').style.display = 'initial';
+    }
+
+    function addFolder() {
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('subject_addfolder_window').style.display = 'initial';
+    }
+
+    function addFolderFormSubmit() {
+        var formElement = document.getElementById('subject_folder_form');
+
+        var inputElement = document.getElementById('subject_folder_path');
+        inputElement.value = document.getElementById('subject_upload_path').value;
+
+        formElement.submit();
+
+    }
+
+    function subjectPageBack() {
+        var subjectsElement = document.getElementById('subjects');
+        var subjectMenuElement = document.getElementById('subject_menu');
+        var subjectFSElement = document.getElementById('subject_fs');
+
+        if (subjectsElement.style.display == 'none') {
+            subjectsElement.style.display = 'initial';
+
+            subjectMenuElement.style.display = 'none';
+            subjectFSElement.style.display = 'none';
+
+            var tableElemenet = document.getElementById('subject_fs_table');
+
+            while (tableElemenet.children.length > 1) {
+                tableElemenet.removeChild(tableElemenet.lastChild);
+            }
+        }
+    }
+
+    function openNote(fileName, jsonString) {
+        var note = JSON.parse(jsonString);
+
+        var h3Element = document.getElementById('subject_note_open_window_file');
+        h3Element.innerHTML = 'Note of file: ' + fileName;
+
+        var h5Element = document.getElementById('subject_note_open_window_title');
+        h5Element.innerHTML = note.title;
+
+        var divElement = document.getElementById('subject_note_open_window_description');
+        divElement.innerHTML = note.description;
+
+        var buttonElement = document.getElementById('subject_note_open_window_edit');
+        buttonElement.setAttribute('onclick', 'editNote(' + note.id + ', \'' + note.title + '\', \'' + note.description + '\', ' + note.public + ')');
+
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('subject_note_open_window').style.display = 'initial';
+    }
+
+    function addNote(path) {
+        clearAddNote();
+        document.getElementById('subject-note-add-path').value = path;
+
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('subject_note_add_window').style.display = 'initial';
+    }
+
+    function editNote(id, title, description, visible) {
+        clearAddNote();
+        closePopup();
+
+        document.getElementById('subject-note-add-id').value = id;
+        document.getElementById('subject-note-add-title').value = title;
+        document.getElementById('subject-note-add-description').value = description;
+        if (visible) {
+            document.getElementById('subject-note-add-checkbox').setAttribute('checked', '');
+        }
+
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('subject_note_add_window').style.display = 'initial';
+    }
+
+    function changeVisability(element, path) {
+        var visability = element.checked ? 1 : 0;
+
+        $.ajax({
+            url: window.origin + '/json/changefilevisability/' + visability + '&' + encodeURIComponent(path),
+            type: 'GET',
+            success: function() {
+                console.log('succes');
+            }
+        });
+    }
+
+    function clearAddNote() {
+        document.getElementById('subject-note-add-path').value = '';
+        document.getElementById('subject-note-add-id').value = '';
+        document.getElementById('subject-note-add-title').value = '';
+        document.getElementById('subject-note-add-description').value = '';
+        document.getElementById('subject-note-add-checkbox').removeAttribute('checked');
+    }
+</script>

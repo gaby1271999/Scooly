@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=UTF"-8">
+        <title>My Profile</title>
+
+        <link rel="stylesheet" type="text/css" href="/stylesheets/panel_style.css">
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+        <script src="/plugins/Jcrop/js/jquery.Jcrop.min.js"></script>
+        <link rel="stylesheet" href="/plugins/Jcrop/css/jquery.Jcrop.css" type="text/css" />
+
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #71b1d6;
+            }
+
+            #password {
+                margin-top: 50px;
+                margin-left: 30px;
+            }
+
+            #image {
+                margin-top: 50px;
+                margin-left: 30px;
+            }
+
+            #birthdate {
+                margin-top: 50px;
+                margin-left: 30px;
+            }
+        </style>
+
+    </head>
+
+    <body>
+        <div class="header" style="background-color: #3C8DBC; width: 100%; height: 75px; position: fixed; z-index: 10; padding: 0; top: 0;">
+            <div class="logo">
+                <a href="panel" onclick="playSound()"><img class="logo-img" src="/images/logo/scooly_logo.png" ></a>
+            </div>
+
+            <div class="alerts">
+                <img class="logo-img" style="margin-right: 10%" src="/images/icons/appointment_icon.png">
+                <img class="logo-img" style="margin-right: 10%" src="/images/icons/message_icon.png">
+            </div>
+        </div>
+
+        <div style="top: 75px; color: white; margin-left: 200px; margin-right: 200px;">
+            <h1 style="text-align: center;">Welcome <%= username %></h1>
+
+            <div style="display: inline-block;">
+                <div id="password">
+                    <h3>Change your password:</h3>
+
+                    <form style="margin-left: 20px;" method="POST" action="/profile_settings/password">
+                        <p>Old password</p>
+                        <input type="password" name="old_password" placeholder="Old password"><br>
+
+                        <p>New password</p>
+                        <input type="password" name="new_password" placeholder="New password">
+                        <p>Repeat new password</p>
+                        <input type="password" name="repeated_new_password" placeholder="Repeat new password"><br>
+
+                        <input type="submit" value="Change">
+                    </form>
+                </div>
+            </div>
+
+            <div style="display: inline-block; margin-left: 100px;">
+                <div id="image">
+                    <h3>Change your profile image</h3>
+
+                    <form style="margin-left: 20px;" method="POST" action="/profile_settings/avatar" enctype="multipart/form-data">
+                        <p>Your new photo</p>
+                        <input type="file" name="file" value="Your image" accept="image/jpeg|image/png|image/gif" onchange="readURL(this)"><br>
+                        <img id="avatar_image" style="width: auto; height: 200px;" src="#"/>
+                        <input type="hidden" name="cropx" id="cropx" value="0" />
+                        <input type="hidden" name="cropy" id="cropy" value="0" />
+                        <input type="hidden" name="cropw" id="cropw" value="0" />
+                        <input type="hidden" name="croph" id="croph" value="0" />
+                        <script language="Javascript">
+                            function readURL(input) {
+                                if (input.files && input.files[0]) {
+                                    var reader = new FileReader();
+
+                                    reader.onload = function (e) {
+                                        $('#avatar_image').attr('src', e.target.result);
+                                    };
+
+                                    reader.readAsDataURL(input.files[0]);
+
+
+                                    setTimeout(function(){
+                                        jQuery(function($) {
+                                            $('#avatar_image').Jcrop({
+                                                aspectRatio: 1,
+                                                onSelect: setOnChange
+                                            },function(){
+                                                var jcrop_api = this;
+                                                thumbnail = this.initComponent('Thumbnailer', { width: 130, height: 130 });
+                                            });
+                                        });
+                                    },3000);
+                                }
+                            }
+
+                            function setOnChange(c) {
+                                document.getElementById("cropx").value = c.x;
+                                document.getElementById("cropy").value = c.y;
+                                document.getElementById("cropw").value = c.w;
+                                document.getElementById("croph").value = c.h;
+                            }
+                        </script>
+
+                        <input type="submit" value="Change">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

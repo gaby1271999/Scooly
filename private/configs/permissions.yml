@@ -1,0 +1,82 @@
+groups: 
+  admin: 
+    permissions: 
+      - mails.inbox.remove
+      - mails.concept.resent
+      - mails.concept.add
+      - mails.sent
+      - mails.concept.read
+      - mails.read
+      - mails.inbox.vieuw
+      - news.read
+      - news.remove
+      - news.add
+      - news.edit
+      - admin.panel
+      - agenda.additem.note
+      - agenda.additem.test
+      - agenda.additem.task
+      - agenda.additem.preparation
+      - agenda.additem.materials
+      - agenda.additem.topic
+      - agenda.edititem
+      - agenda.deleteitem
+      - subjetc.fs.editor
+      - agenda.additem.nottheteacher
+  students: 
+    permissions: 
+      - mails.read
+      - mails.concept.read
+      - mails.concept.add
+      - news.read
+      - agenda.additem.note
+    3DeGraad: 
+      permissions: []
+      6IW: 
+        permissions: 
+          - mails.concept.resent
+      6BW: 
+        permissions: []
+      7TCMP: 
+        permissions: []
+      5IW: 
+        permissions: []
+  teacher: 
+    permissions: 
+      - agenda.additem.note
+      - agenda.additem.test
+      - agenda.additem.task
+      - agenda.additem.preparation
+      - agenda.additem.materials
+      - agenda.additem.topic
+      - agenda.edititem
+      - agenda.deleteitem
+      - subjetc.fs.editor
+      - subject.file.visability
+      - subject.note.add
+      - subject.note.edit
+permissions: 
+  - news.add
+  - news.remove
+  - news.edit
+  - news.read
+  - mails.inbox.vieuw
+  - mails.inbox.remove
+  - mails.sent
+  - mails.read
+  - mails.concept.read
+  - mails.concept.add
+  - mails.concept.resent
+  - agenda.additem.note
+  - agenda.additem.test
+  - agenda.additem.task
+  - agenda.additem.preparation
+  - agenda.additem.materials
+  - agenda.additem.topic
+  - agenda.additem.nottheteacher
+  - agenda.edititem
+  - admin.panel
+  - subjetc.fs.editor
+  - subject.file.visability
+  - subject.note.add
+  - subject.note.edit

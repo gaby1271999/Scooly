@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <title>Page not found</title>
+
+        <style>
+            canvas {
+                border: 1px solid #d3d3d3;
+                background-image: url("images/2d-game-background.jpg");
+                background-size: cover;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1 style="text-align: center">Page not found!</h1>
+
+        <div id="info" style="width: 300px; margin-left: auto; margin-right: auto;">
+            <p style="text-align: center;">Something went horribly wrong. Check the url for any typing mistakes or have fun with the little game we made for you.</p>
+
+            <button id="button" style="width: 50px; margin-left: 125px;" onclick="startGame()">Start game</button>
+        </div>
+
+        <script>
+            var runner;
+            var obstacles = [];
+            var jumpState = false;
+            var playing = false;
+            var startJumping = false;
+            var jumpTimer = 0;
+            var obstacleSpeed = 3;
+            var points = 0;
+            var scoreObject;
+            var sound = new sound("sounds/game_music.mp3");
+
+            function startGame() {
+                if (playing == false) {
+                    runner = new component(30, 30, "yellow", 50, 230);
+                    obstacles[0] = new component(15, 30, "red", 501, 230);
+                    scoreObject = new score("black", 20, 400, 30);
+                    sound.play();
+
+                    game.start();
+
+                    playing = true;
+                }
+            }
+
+            var game = {
+                canvas: document.createElement("canvas"),
+                
+                start: function() {
+                    this.canvas.width = 500;
+                    this.canvas.height = 300;
+                    this.context = this.canvas.getContext("2d");
+                    document.body.insertBefore(this.canvas, document.getElementById("info"));
+
+                    this.interval = setInterval(updateCanvas, 1000/60);
+
+                    window.addEventListener("keydown", function (event) {
+                        game.key = event.keyCode;
+                        console.log(event.keyCode);
+                    })
+
+                    window.addEventListener("keyup", function (event) {
+                        game.key = false;
+                        startJumping = false;
+                    })
+                },
+
+                clear: function() {
+                    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                },
+
+                stop: function() {
+                    clearInterval(this.interval);
+                    playing = false;
+                    obstacleSpeed = 3;
+                    points = 0;
+
+                    obstacles = [];
+
+                    sound.stop();
+                }
+            }
+
+            function score(color, height, x, y) {
+                this.height = height;
+                this.x = x;
+                this.y = y;
+
+                this.updateScore = function () {
+                    ctx = game.context;
+                    ctx.font = height + 'pt Arial';
+                    ctx.fillStyle = color;
+
+                    ctx.textBaseline = 'middle';
+                    ctx.textAlign = "center";
+                    ctx.fillText("Score: " + points, x, y);
+                }
+            }
+
+            function component(width, height, color, x, y) {
+                this.width = width;
+                this.height = height;
+                this.x = x;
+                this.y = y;
+
+                this.fallDown = function() {
+                    if (jumpState === true) {
+                        if (jumpTimer <= 1000) {
+                            jumpTimer += (1000 / 60);
+                        } else {
+                            this.y += 50;
+                            jumpState = false;
+                            jumpTimer = 0;
+                            return;
+                        }
+                    }
+
+                    if (game.key === false && jumpState != false) {
+                        this.y += 50;
+                        jumpState = false;
+                        jumpTimer = 0;
+                        return;
+                    }
+                }
+
+                this.updateRunner = function() {
+                    ctx = game.context;
+                    ctx.fillStyle = color;
+
+                    if (goodkey() && jumpState === false && startJumping === false) {
+                        this.y -= 50;
+                        jumpState = true;
+                        startJumping = true;
+                    }
+
+                    this.fallDown();
+
+
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+
+                this.updateOpstacle = function() {
+                    ctx = game.context;
+                    ctx.fillStyle = color;
+
+                    this.x -= obstacleSpeed;
+
+                    if (this.x < 0) {
+                        this.x = 501;
+                        if (obstacleSpeed < 5) {
+                            obstacleSpeed += obstacleSpeed*0.1;
+                        } else {
+                            obstacleSpeed += obstacleSpeed*0.01;
+                        }
+
+                        points++;
+                    }
+
+                    if (obstacleSpeed >= 4 && obstacles[1] == null) {
+                        obstacles[1] = new component(15, 30, "red", 751, 230);
+                    }
+
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+
+                this.crashWithObject = function(object) {
+                    var myleft = this.x;
+                    var myright = this.x + (this.width);
+                    var mytop = this.y;
+                    var mybottom = this.y + (this.height);
+                    var otherleft = object.x;
+                    var otherright = object.x + (object.width);
+                    var othertop = object.y;
+                    var otherbottom = object.y + (object.height);
+                    var crash = true;
+                    if ((mybottom < othertop) ||
+                        (mytop > otherbottom) ||
+                        (myright < otherleft) ||
+                        (myleft > otherright)) {
+                        crash = false;
+                    }
+                    return crash;
+                }
+            }
+
+            function goodkey() {
+                if (game.key == 38 || game.key == 32) {
+                    return true;
+                }
+
+                return false;
+            }
+            
+            function updateCanvas() {
+                for (var i = 0; i < obstacles.length; i++) {
+                    if (runner.crashWithObject(obstacles[i])) {
+                        game.stop();
+
+                        displayEnd("red", "You failed", 250, 150);
+                        return;
+                    }
+                }
+
+                game.clear();
+
+                runner.updateRunner();
+                for (var i = 0; i < obstacles.length; i++) {
+                    obstacles[i].updateOpstacle();
+                }
+
+                scoreObject.updateScore();
+            }
+            
+            function displayEnd(color, text, x, y) {
+                ctx = game.context;
+
+                ctx.font = '40pt Arial';
+                ctx.fillStyle = color;
+
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = "center";
+                ctx.fillText(text, x, y);
+            }
+
+            function sound(src) {
+                this.sound = document.createElement("audio");
+                this.sound.src = src;
+                this.sound.setAttribute("preload", "auto");
+                this.sound.setAttribute("controls", "none");
+                this.sound.style.display = "none";
+                document.body.appendChild(this.sound);
+
+                this.play = function() {
+                    this.sound.play();
+                }
+
+                this.stop = function() {
+                    this.sound.pause();
+                    this.sound.currentTime = 0;
+                }
+            }
+        </script>
+    </body>
+</html>

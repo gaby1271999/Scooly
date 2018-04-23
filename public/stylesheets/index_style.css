@@ -1,0 +1,54 @@
+html { width: 100%; height:100%; overflow:hidden; }
+
+body {       /*seen*/
+    width: 100%;
+    height: 100%;
+    background: -webkit-radial-gradient(circle, rgba(255, 255, 0, 0.50), rgba(118, 184, 82, 1) 80%);
+    background-size: cover;
+}
+
+.login-page {  /*seen*/
+    width: 360px;
+    padding: 3%;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+}
+
+.form form input:first-child { /*seen*/
+    outline: 0;
+    background: #f2f2f2;
+    padding: 5%;
+    width: 100%;
+    border: 0;
+    box-sizing: border-box;
+}
+
+.form form input:nth-child(2) { /*seen*/
+    margin-top: 5%;
+    outline: 0;
+    background: #f2f2f2;
+    padding: 5%;
+    width: 100%;
+    border: 0;
+    box-sizing: border-box;
+}
+
+.form form button { /*seen*/
+    margin-top: 5%;
+    outline: 0;
+    border: 0;
+    background: #4CAF50;
+    padding: 5%;
+    width: 100%;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.form form button:hover, .form form button:active, .form from button:focus { /*seen*/
+    background: #43A047;
+}

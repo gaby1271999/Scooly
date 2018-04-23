@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login</title>
+    <link rel='stylesheet' type="text/css" href='/stylesheets/index_style.css' />
+
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="form">
+        <% if (error !== 'undefined') { %>
+            <p style="color: red"><%= error %></p>
+        <% } %>
+
+        <form method="POST" action="/login" id="form">
+          <input type="text" name="username" placeholder="<%= object.username %>">
+          <input type="password" name="password" placeholder="<%= object.password %>">
+          <button onclick="document.getElementById('form').submit()"><%= object.login %></button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

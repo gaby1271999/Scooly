@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Admin</title>
+        <link rel='stylesheet' type="text/css" href='/stylesheets/admin_style.css'/>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                font-family: Calibri;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Calibri;
+                background-color: #ECF0F5;
+            }
+
+            .header {
+                background-color: #222D32;
+                width: 300px;
+                position: fixed;
+                height: 100%;
+            }
+
+            .title {
+                background-color: #1A2226;
+                padding-top: 25px;
+                padding-bottom: 25px;
+            }
+
+            .title p {
+                text-align: center;
+                font-size: 30px;
+                color: #4b646f;
+            }
+
+            .menu-item {
+                border-bottom: 1px solid #2F2F2F;
+                cursor: pointer;
+            }
+
+            .menu-item a {
+                display: block;
+                padding: 5%;
+                text-decoration: none;
+                color: #949494;
+            }
+
+            .menu-item a:hover {
+                transition: color,background-color 2s;
+                background-color: #374C55;
+                color: #CECECE;
+                text-decoration: none;
+            }
+
+            #content {
+                margin-left: 300px;
+                padding: 5%;
+            }
+
+            .user_table td, .user_table th {
+                border: 1px solid black;
+                text-align: left;
+                padding: 8px;
+            }
+
+            .table_border td, .table_border th {
+                border: 1px solid black;
+                padding: 8px;
+            }
+
+            .list_type {
+                list-style-type: none;
+                cursor: pointer;
+            }
+
+            .list_icon {
+                width: 15px;
+                margin-right: 1%;
+            }
+
+            .Absolute-Center {
+                margin: auto;
+                position: fixed;
+                top: 0; left: 0; bottom: 0; right: 0;
+            }
+
+            .logo {
+                width: 300px;
+                height: auto;
+                display: block;
+                text-align: center;
+                background-color: #0e90d2;
+            }
+
+            .logo-img {
+                height: 50px;
+                vertical-align: middle;
+            }
+        </style>
+
+        <%
+            var permCounter = 0;
+        %>
+
+        <script>
+            var error = <%- JSON.stringify(error) %>;
+            var permission = <%- JSON.stringify(permission) %>
+            var schedules = <%- JSON.stringify(schedules) %>
+            var weekPlanning = <%- JSON.stringify(weekPlanning) %>;
+
+            window.onload = function () {
+                if (error !== 0) {
+                    document.getElementById('alert_box_overlay').style.display = 'block';
+
+                    document.getElementById('alert_box_title').innerHTML = error;
+                    document.getElementById('alert_box').style.background = 'crimson';
+                    document.getElementById('alert_box').style.borderColor = 'red';
+                    document.getElementById('alert_box').style.display = 'initial';
+
+                    for (var index = 0; index < document.body.children.length; index++) {
+                        if (index > 1) {
+                            document.body.children[index].style.filter = 'blur(2px)';
+                        }
+                    }
+                }
+            }
+
+            function closeAlert() {
+                document.getElementById('alert_box_overlay').style.display = 'none';
+
+                document.getElementById('alert_box').style.display = 'none';
+
+                for (var index = 0; index < document.body.children.length; index++) {
+                    if (index > 1) {
+                        document.body.children[index].style.filter = 'none';
+                    }
+                }
+            }
+
+            var changedPermissions = {};
+
+            function addGroups(parent, object) {
+                var mainElement = document.getElementById(parent);
+
+                for (var field in object) {
+                    if (field != 'permissions') {
+                        var liElement = document.createElement("li");
+                        liElement.setAttribute('style', 'margin-left: ' + (mainElement.style.marginLeft += 15) +  'px;');
+                        mainElement.appendChild(liElement);
+
+                        if (fieldCount(object[field]) > 1) {
+                            var expandElement = document.createElement("a");
+                            expandElement.setAttribute('onclick', 'showList("' + field + '")')
+                            expandElement.innerHTML = '<img class="list_icon" id="expand_of_' + field + '" src="/images/icons/minus_icon.png">';
+                            liElement.appendChild(expandElement);
+                        }
+
+                        var aElement = document.createElement("a");
+                        aElement.setAttribute('onclick', 'showPems("'+ field + '", "' + getParents(field, [], permission['groups']) + '")');
+                        aElement.innerHTML = field;
+                        liElement.appendChild(aElement);
+                        var list = document.createElement("ul");
+                        list.setAttribute('class', 'list_type');
+                        list.setAttribute('id', field);
+                        list.setAttribute('style', 'display: none;')
+                        liElement.appendChild(list);
+                    }
+                }
+
+                for (var field in object) {
+                    if (field != 'permissions') {
+                        if (fieldCount(object[field]) > 1) {
+                            addGroups(field, object[field]);
+                        }
+                    }
+                }
+            }
+
+            function showList(id) {
+                var element = document.getElementById(id);
+                var expandElement = document.getElementById('expand_of_' + id);
+
+                if (element.style.display == 'none') {
+                    element.style.display = 'block'
+
+                    expandElement.src = '/images/icons/plus_icon.png';
+                } else {
+                    element.style.display = 'none'
+                    expandElement.src = '/images/icons/minus_icon.png';
+                }
+            }
+
+            function showPems(id, test) {
+                var permElement = document.getElementById('perms_area');
+                var perms = getPerms(id, permission);
+
+                while (permElement.firstChild) {
+                    permElement.removeChild(permElement.firstChild);
+                }
+
+                for (var index in permission['permissions']) {
+                    var aElement = document.createElement("a");
+                    aElement.setAttribute('style', 'display: block;');
+                    aElement.setAttribute('id', permission['permissions'][index]);
+                    aElement.setAttribute('onclick', 'changePermission("' + id + '", "' + permission['permissions'][index] + '")');
+                    aElement.innerHTML = permission['permissions'][index];
+                    permElement.appendChild(aElement);
+
+                    for (var permIndex in perms) {
+                        if (perms[permIndex] == permission['permissions'][index]) {
+                            var element = document.getElementById(perms[permIndex]);
+                            element.style.backgroundColor = 'green';
+                            continue;
+                        }
+                    }
+
+
+                    for (var groupIndex in test.split(',')) {
+                        var permsOfGroup = getPerms(test.split(',')[groupIndex], permission['groups']);
+
+                        for (var permIndex in permsOfGroup) {
+                            if (permission['permissions'][index] == permsOfGroup[permIndex]) {
+                                var element = document.getElementById(permsOfGroup[permIndex]);
+                                element.style.backgroundColor = 'red';
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function changePermission(group, perm) {
+                var permElement = document.getElementById(perm);
+
+                if (permElement.style.backgroundColor != 'red') {
+                    if (changedPermissions[group] == undefined) {
+                        changedPermissions[group] = {};
+                    }
+
+                    if (permElement.style.backgroundColor == 'green') {
+                        permElement.style.backgroundColor = 'wheat';
+
+                        if (changedPermissions[group][perm] == undefined) {
+                            changedPermissions[group][perm] = 0;
+                        } else {
+                            delete changedPermissions[group][perm];
+                        }
+
+                        var newPermList = [];
+                        var newPermCount = 0;
+                        for (var index in getObject(group, permission['groups'])['permissions']) {
+                            if (getObject(group, permission['groups'])['permissions'][index] != perm) {
+                                newPermList[newPermCount] = getObject(group, permission['groups'])['permissions'][index];
+                            }
+                        }
+                        getObject(group, permission['groups'])['permissions'] = newPermList;
+                    } else {
+                        permElement.style.backgroundColor = 'green';
+
+                        if (changedPermissions[group][perm] == undefined) {
+                            changedPermissions[group][perm] = 1;
+                        } else {
+                            delete changedPermissions[group][perm];
+                        }
+
+                        var permList = getObject(group, permission['groups'])['permissions'];
+                        permList[permList.length+1] = perm;
+
+                        getObject(group, permission['groups'])['permissions'] = permList;
+                    }
+                }
+            }
+
+            function fieldCount(object) {
+                var count = 0;
+                for (var field in object) {
+                    count++;
+                }
+
+                return count;
+            }
+
+            function getObject(name, object) {
+                for (var field in object) {
+                    if (field == name) {
+                        return object[field];
+                    }
+                }
+
+                for (var field in object) {
+                    if (field != 'permissions') {
+                        if (getObject(name, object[field])) {
+                            return getObject(name, object[field]);
+                        }
+                    }
+                }
+            }
+
+            function getParents(name, parents, object) {
+                for (var field in object) {
+                    if (field == name) {
+                        return true;
+                    }
+                }
+
+                for (var field in object) {
+                    if (field != 'permissions') {
+                        if (getParents(name, parents, object[field])) {
+                            parents[parents.length] = field;
+                            return parents;
+                        }
+                    }
+                }
+            }
+
+            function getPerms(name, object) {
+                for (var field in object) {
+                    if (field == name) {
+                        return object[field]['permissions'];
+                    }
+                }
+
+                for (var field in object) {
+                    if (field != 'permissions') {
+                        if (getPerms(name, object[field])) {
+                            return getPerms(name, object[field]);
+                        }
+                    }
+                }
+            }
+            
+            function getAllGroups(object) {
+                var groups = [];
+
+                for (var field in object) {
+                    if (field != 'permissions') {
+                        groups[groups.length] = field;
+                    }
+                }
+
+                for (var field in object) {
+                    if (field != 'permissions') {
+                        var fields = getAllGroups(object[field]);
+
+                        for (var index in fields) {
+                            groups[groups.length] = fields[index];
+                        }
+                    }
+                }
+
+                return groups;
+            }
+
+            function submitPermissionChanges() {
+                var formElement = document.getElementById("permission_form");
+
+                for (var group in changedPermissions) {
+                    for (var perm in changedPermissions[group]) {
+                        var inputElement = document.createElement("input");
+                        inputElement.setAttribute('style', 'display: none');
+                        inputElement.setAttribute('type', 'text');
+                        inputElement.setAttribute('name', group + "-" + perm);
+                        inputElement.setAttribute('value', changedPermissions[group][perm]);
+                        formElement.appendChild(inputElement);
+                    }
+                }
+
+                document.getElementById("permission_form").submit();
+            }
+
+            var allSelected = false;
+            function selectAllSchedules() {
+                for (var name in schedules) {
+                    var element = document.getElementById(name);
+
+                    element.checked = !allSelected;
+                }
+
+                allSelected = !allSelected;
+            }
+
+            function submitSchedules() {
+                var formElement = document.getElementById('form_schedules');
+
+                for (var name in schedules) {
+                    var element = document.getElementById(name);
+
+
+                    if (schedules[name] != element.checked) {
+                        var inputElement = document.createElement('input');
+                        inputElement.setAttribute('style', 'display: none');
+                        inputElement.setAttribute('type', 'text');
+                        inputElement.setAttribute('name', name);
+                        inputElement.setAttribute('value', (element.checked ? 1 : 0));
+                        formElement.appendChild(inputElement);
+                    }
+                }
+
+                formElement.submit();
+            }
+
+            function selectGroup(username, selected) {
+                var selectedGroup = selected.options[selected.selectedIndex].text;
+
+                var formElement = document.getElementById('user_group_form');
+
+                for (var index in formElement.children) {
+                    var child = formElement.children[index];
+                    if (child.id == username) {
+                        child.value = selectedGroup;
+                        return;
+                    }
+                }
+
+                var inputElement = document.createElement('input');
+                inputElement.setAttribute('id', username);
+                inputElement.setAttribute('style', 'display: none');
+                inputElement.setAttribute('name', username);
+                inputElement.setAttribute('value', selectedGroup);
+                formElement.appendChild(inputElement);
+            }
+
+            function selectClass(username, selected) {
+                var selectedClass = selected.options[selected.selectedIndex].text;
+
+                var formElement = document.getElementById('user_class_form');
+
+                for (var index in formElement.children) {
+                    var child = formElement.children[index];
+                    if (child.id == username) {
+                        child.value = selectedClass;
+                        return;
+                    }
+                }
+
+                var inputElement = document.createElement('input');
+                inputElement.setAttribute('id', username);
+                inputElement.setAttribute('style', 'display: none');
+                inputElement.setAttribute('name', username);
+                inputElement.setAttribute('value', selectedClass);
+                formElement.appendChild(inputElement);
+            }
+
+            function submitUserGroup() {
+                var formElement = document.getElementById('user_group_form');
+                formElement.submit();
+            }
+
+            function submitUserClass() {
+                var formElement = document.getElementById('user_class_form');
+                formElement.submit();
+            }
+
+            function home() {
+                window.location = window.origin + '/panel';
+            }
+
+            function openMenuItem(id) {
+                var contentElement = document.getElementById('content');
+
+                for (var i = 0; i < contentElement.children.length; i++) {
+                    var element = contentElement.children[i];
+
+                    if (element.style.display == 'block') {
+                        element.style.display = 'none';
+                    }
+                }
+
+                document.getElementById(id).style.display = 'block';
+            }
+        </script>
+    </head>
+
+    <body>
+        <div id="alert_box_overlay" style="display: none; position: fixed; top: 0; left: 0; background-color: black; opacity: 0.75; z-index: 10; width: 100%; height: 100%;"></div>
+
+        <div id="alert_box" class="Absolute-Center" style="width: 500px; max-height: 100px; display: none; z-index: 10; border: 5px solid; border-radius: 25px;">
+            <div style="text-align: center; color: white">
+                <h2 id="alert_box_title"></h2>
+
+                <button style="margin-top: 20px; padding: 2%; width: 30%;" onclick="closeAlert()">Close</button>
+            </div>
+        </div>
+
+        <div class="header">
+            <div class="logo">
+                <a style="cursor: pointer;" onclick="home()"><img class="logo-img" src="/images/logo/scooly_logo.png" ></a>
+            </div>
+
+            <div class="title">
+                <p>Menu</p>
+            </div>
+
+            <div class="menu">
+                <ul>
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('home')">home</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('add-user')">New user</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('all-users')">users</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('add-class')">Add class</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('remove-class')">remove class</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('add-group')">Add group</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('remove-group')">Remove group</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('permissions')">Permissions</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('schedules')">Schedules</a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a onclick="openMenuItem('week-planning')">Week planning</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="content">
+            <div id="home" style="display: block">
+                <h1>Welcome to the admin pannel!</h1>
+
+                <p>The two creators of this school system are happy to meet you. In here you can modify all the Scooly settings.</p>
+            </div>
+
+            <div id="add-user" style="display: none">
+                <h1>Add a user to the system</h1>
+
+                <form method="POST" action="/admin_settings/adduser">
+                    <input type="text" name="username" placeholder="Username">
+                    <input type="password" name="password" placeholder="Password">
+                    <input type="password" name="password_check" placeholder="Password">
+                    <input type="text" name="group_name" placeholder="Group name">
+                    <select id="add-user-select-class" name="class">
+                        <script>
+                            $.getJSON(window.origin + '/json/getclasses', function (data) {
+                                data[data.length] = '';
+
+                                for (var i = 0; i < data.length; i++) {
+                                    var optionElement = document.createElement('option');
+                                    if (data[i].length == 0) {
+                                        optionElement.setAttribute('selected', '');
+                                    }
+                                    optionElement.innerHTML = data[i];
+
+                                    document.getElementById('add-user-select-class').appendChild(optionElement);
+                                }
+                            });
+                        </script>
+                    </select>
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+
+            <div id="all-users" style="display: none">
+                <h1>All the system users</h1>
+
+                <table class="user_table" style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <th style="width: 70%;">Username</th>
+                        <th style="width: 10%;">Class</th>
+                        <th style="width: 10%;">Group</th>
+                        <th style="width: 10%;">Select</th>
+                    </tr>
+
+                    <form id="user_list_form" method="POST" action="/admin_settings/user_list">
+                        <% for (var user in users) { %>
+                            <tr class="user">
+                                <td><%= users[user].username %></td>
+
+                                <td>
+                                    <select onchange="selectClass('<%= users[user].username %>', this)" id="class-select-<%= user %>" name="class">
+                                        <script>
+                                            function addOptions() {
+                                                var user = <%- JSON.stringify(users[user]) %>
+                                                var i = <%- JSON.stringify(user) %>
+                                                var className = user.class == undefined ? '' : user.class;
+
+                                                document.write('<option selected>' + className + '</option>');
+
+                                                $.getJSON(window.origin + '/json/getclasses', function (data) {
+                                                    data[data.length] = '';
+
+                                                    for (var index in data) {
+                                                        if (className != data[index]) {
+                                                            var optionElement = document.createElement('option');
+                                                            optionElement.innerHTML = data[index];
+
+                                                            document.getElementById('class-select-' + i).appendChild(optionElement);
+                                                        }
+                                                    }
+                                                });
+                                            }
+
+                                            addOptions();
+                                        </script>
+                                    </select>
+                                </td>
+
+                                <td>
+                                    <select onchange="selectGroup('<%= users[user].username %>', this)">
+                                        <option disabled selected><%= users[user].group %></option>
+
+                                        <script>
+                                            var user = <%- JSON.stringify(users[user]) %>
+                                            var allGroups = getAllGroups(permission['groups']);
+
+                                            for (var index in allGroups) {
+                                                if (user.group != allGroups[index]) {
+                                                    document.write('<option>' + allGroups[index] + '</option>');
+                                                }
+                                            }
+                                        </script>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="username" value="<%= users[user].username %>"/>
+                                </td>
+                            </tr>
+                        <% } %>
+
+                        <tr>
+                            <td style="width: 5%">
+                                <input type="button" id="selectall" value="Select all" onclick="selectAll()"/>
+                                <input type="button" value="Submit changed class." onclick="submitUserClass()"/>
+                                <input type="button" value="Submit changed groups." onclick="submitUserGroup()"/>
+                                <input type="submit" id="removeselected" value="remove selected items"/>
+                            </td>
+                        </tr>
+                    </form>
+                </table>
+
+                <form id="user_group_form" method="POST" action="/admin_settings/user_group"></form>
+
+                <form id="user_class_form" method="POST" action="/admin_settings/user_class"></form>
+            </div>
+
+            <div id="add-class" style="display: none">
+                <h1>Add a class to the system</h1>
+
+                <form method="POST" action="/admin_settings/addclass">
+                    <input type="text" name="class_name" placeholder="Class name">
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+
+            <div id="remove-class" style="display: none">
+                <h1>Remove a class from the system</h1>
+
+                <form method="POST" action="/admin_settings/removeclass">
+                    <input type="text" name="class_name" placeholder="Class name">
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+
+            <div id="add-group" style="display: none">
+                <h1>Add a group to the permission system</h1>
+
+                <form method="POST" action="/admin_settings/addgroup">
+                    <input type="text" name="group_name" placeholder="Group name">
+                    <input type="text" name="department" placeholder="Department name">
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+
+            <div id="remove-group" style="display: none">
+                <h1>Remove a group from the permission system</h1>
+
+                <form method="POST" action="/admin_settings/removegroup">
+                    <input type="text" name="group_name" placeholder="Group name">
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+
+            <div id="permissions" style="display: none">
+                <h1>Configure the permissions of the users of our system</h1>
+
+                <table style="text-align: center; width: 100%; border-collapse: collapse; border: 1px black solid;">
+                    <tr style="background-color: grey;">
+                        <td style="width: 50%">groups</td>
+                        <td>permissions</td>
+                    </tr>
+
+                    <tr style="background-color: wheat; text-align: left">
+                        <td valign="top">
+                            <ul class="list_type" id="list_id" style="margin-left: 3%;">
+
+                            </ul>
+
+                            <script>
+                                addGroups('list_id', permission['groups'])
+                            </script>
+                        </td>
+
+                        <td id="perms_area" valign="top">
+                        </td>
+                    </tr>
+                </table>
+
+                <form id="permission_form" method="POST" action="/admin_settings/permission">
+                    <input type="button" value="Change the permissions." onclick="submitPermissionChanges()">
+                </form>
+            </div>
+
+            <div id="schedules" style="display: none">
+                <h1>Activated schedules</h1>
+
+                <table class="table_border" style="width: 100%; text-align: left; border-collapse: collapse;">
+                    <tr style="background-color: grey;">
+                        <td style="width: 90%;">Schedule files</td>
+                        <td>Select</td>
+                    </tr>
+
+                    <% for (var name in schedules) { %>
+                        <tr>
+                            <td><%= name %></td>
+                            <td>
+                                <input type="checkbox" id="<%= name %>" <% if (schedules[name]) { %> checked <% } %>>
+                            </td>
+                        </tr>
+                    <% } %>
+
+                    <tr>
+                        <td style="width: 5%">
+                            <input type="button" id="selectall" value="Select all" onclick="selectAllSchedules()">
+                            <input type="button" value="Change activated schedules" onclick="submitSchedules()">
+                        </td>
+                    </tr>
+                </table>
+
+                <form id="form_schedules" method="POST" action="/admin_settings/schedules">
+
+                </form>
+            </div>
+
+            <div id="week-planning" style="display: none">
+                <h1>Week planning</h1>
+
+                <table id="week_planning_table" style="width: 100%; text-align: left">
+                    <tr>
+                        <th style="width: 33.33%;">period</th>
+                        <th style="width: 33.33%">Begin</th>
+                        <th style="width: 33.33%">End</th>
+                    </tr>
+
+                    <script>
+                        var tableElement = document.getElementById('week_planning_table');
+
+                        for (var dayName in weekPlanning) {
+                            console.log(dayName);
+                            var trElementDayName = document.createElement('tr');
+                            var thElement = document.createElement('th');
+                            thElement.innerHTML = dayName;
+                            trElementDayName.appendChild(thElement);
+                            tableElement.appendChild(trElementDayName);
+
+                            for (var index in weekPlanning[dayName]) {
+                                var trElement = document.createElement('tr');
+                                var hourArgs = weekPlanning[dayName][index].split('-');
+                                for (var i = 0; i < 3; i++) {
+                                    var tdElement = document.createElement('td');
+                                    if (i == 0) {
+                                        tdElement.innerHTML = ++index;
+                                    } else if (i == 1) {
+                                        tdElement.innerHTML = hourArgs[0];
+                                    } else {
+                                        tdElement.innerHTML = hourArgs[1];
+                                    }
+
+                                    trElement.appendChild(tdElement);
+                                }
+
+                                tableElement.appendChild(trElement);
+                            }
+                        }
+                    </script>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>

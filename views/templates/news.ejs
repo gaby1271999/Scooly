@@ -1,0 +1,126 @@
+<div class="module" id="news" style="background-color: white; border-radius: 10px; min-height: 200px; max-height: 750px; overflow: hidden; <% if (menu == 'news') { %> display: block; <% } else { %> display: none; <% } %> padding-bottom: 5%; overflow-y: scroll;">
+    <div style="height: 5px; background-color: #00A65A;"></div>
+    <p style="margin: 1% 0 0 3%; font-size: 25px">News</p>
+
+    <div class="article" id="news_form" style="display: none; margin: 1% 5% 0 5%;">
+        <form id="news_add_form" method="POST" action="/panel/addnews">
+            <input type="text" name="title" maxlength="30" placeholder="Title">
+
+            <div style="margin-top: 2%; width: 95%; height: 43%; background-color: #B8FFC4; font-size: 100%; border: 1px solid #00A65A;">
+                <div style="height: 15%; background-color: #00A65A; vertical-align: middle;">
+                    <select style="margin-left: 3%; background-color: #00A65A; outline: 0; border: 0;" onchange="changeFont(this[this.selectedIndex].value)">
+                        <option value="Andale Mono" style="font-family: Andale Mono;">Andale Mono</option>
+                        <option value="Arial" style="font-family: Arial;">Arial</option>
+                        <option value="Arial Black" style="font-family: Arial Black;">Arial Black</option>
+                        <option value="Book Antiqua" style="font-family: Book Antiqua;">Book Antiqua</option>
+                        <option value="Comic Sans MS" style="font-family: Comic Sans MS;">Comic Sans MS</option>
+                        <option value="Courier New" style="font-family: Courier New;">Courier New</option>
+                        <option value="Georgia" style="font-family: Georgia;">Georgia</option>
+                        <option value="Helvetica" style="font-family: Helvetica;">Helvetica</option>
+                        <option value="Impact" style="font-family: Impact;">Impact</option>
+                        <option value="Open Sans" style="font-family: Open Sans;">Open Sans</option>
+                        <option value="Tahoma" style="font-family: Tahoma;">Tahoma</option>
+                        <option value="Terminal" style="font-family: Terminal;">Terminal</option>
+                        <option value="Times New Roman" style="font-family: Times New Roman;">Times New Roman</option>
+                        <option value="Trebuchet MS" style="font-family: Trebuchet MS;">Trebuchet MS</option>
+                        <option value="Verdana" style="font-family: Verdana;">Verdana</option>
+                        <option value="Webdings" style="font-family: Webdings;">Webdings</option>
+                        <option value="Wingdings" style="font-family: Wingdings;">Wingdings</option>
+                    </select>
+
+                    <select style="margin-left: 3%; background-color: #00A65A; outline: 0; border: 0;" onchange="changeSize(this[this.selectedIndex].value)">
+                        <option value="1">Very small</option>
+                        <option value="2">small</option>
+                        <option value="3">Normal</option>
+                        <option value="4">Medium-large</option>
+                        <option value="5">Big</option>
+                        <option value="6">Very big</option>
+                        <option value="7">Maximum</option>
+                    </select>
+                    <input type="button" value="B" onclick="bold()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+                    <input type="button" value="I" onclick="italic()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+                    <input type="button" value="U" onclick="underlined()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+
+                </div>
+                <div id="news_content" class="scroll" contenteditable="true" spellcheck="true" style="height: 85%; overflow-y: scroll; outline: none; padding: 1%;"></div>
+                <textarea name="description" id ="news_description_content" style ="display: none;"></textarea>
+            </div>
+
+            <input type="submit" onclick="postArticle()" value="place">
+        </form>
+    </div>
+
+    <div class="article" id="news_editor" style="display: none; margin: 1% 5% 0 5%;">
+        <form id="news_edit_form" method="POST" action="/panel/editnews">
+            <input type="text" id="news_edit_title" maxlength="30" name="title" placeholder="Title">
+
+            <div style="margin-top: 2%; width: 95%; height: 43%; background-color: #B8FFC4; font-size: 100%; border: 1px solid #00A65A;">
+                <div style="height: 15%; background-color: #00A65A; vertical-align: middle;">
+                    <select style="margin-left: 3%; background-color: #00A65A; outline: 0; border: 0;" onchange="changeFont(this[this.selectedIndex].value)">
+                        <option value="Andale Mono" style="font-family: Andale Mono;">Andale Mono</option>
+                        <option value="Arial" style="font-family: Arial;">Arial</option>
+                        <option value="Arial Black" style="font-family: Arial Black;">Arial Black</option>
+                        <option value="Book Antiqua" style="font-family: Book Antiqua;">Book Antiqua</option>
+                        <option value="Comic Sans MS" style="font-family: Comic Sans MS;">Comic Sans MS</option>
+                        <option value="Courier New" style="font-family: Courier New;">Courier New</option>
+                        <option value="Georgia" style="font-family: Georgia;">Georgia</option>
+                        <option value="Helvetica" style="font-family: Helvetica;">Helvetica</option>
+                        <option value="Impact" style="font-family: Impact;">Impact</option>
+                        <option value="Open Sans" style="font-family: Open Sans;">Open Sans</option>
+                        <option value="Tahoma" style="font-family: Tahoma;">Tahoma</option>
+                        <option value="Terminal" style="font-family: Terminal;">Terminal</option>
+                        <option value="Times New Roman" style="font-family: Times New Roman;">Times New Roman</option>
+                        <option value="Trebuchet MS" style="font-family: Trebuchet MS;">Trebuchet MS</option>
+                        <option value="Verdana" style="font-family: Verdana;">Verdana</option>
+                        <option value="Webdings" style="font-family: Webdings;">Webdings</option>
+                        <option value="Wingdings" style="font-family: Wingdings;">Wingdings</option>
+                    </select>
+
+                    <select style="margin-left: 3%; background-color: #00A65A; outline: 0; border: 0;" onchange="changeSize(this[this.selectedIndex].value)">
+                        <option value="1">Very small</option>
+                        <option value="2">small</option>
+                        <option value="3">Normal</option>
+                        <option value="4">Medium-large</option>
+                        <option value="5">Big</option>
+                        <option value="6">Very big</option>
+                        <option value="7">Maximum</option>
+                    </select>
+                    <input type="button" value="B" onclick="bold()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+                    <input type="button" value="I" onclick="italic()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+                    <input type="button" value="U" onclick="underlined()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
+
+                </div>
+                <div id="news_edit_content" class="scroll" contenteditable="true" spellcheck="true" style="height: 85%; overflow-y: scroll; outline: none; padding: 1%;"></div>
+                <textarea name="description" id ="news_edit_description" style ="display: none;"></textarea>
+            </div>
+
+            <input style="display: none" type="text" id="news_edit_id" name="article_id">
+            <input type="submit" onclick="updateArticle()" value="Update">
+        </form>
+    </div>
+
+    <div style="text-align: center;">
+        <button style="display: none; text-align: center; border: none; background-color: #5bb75b; padding: 5px; color: white; margin-top: 1%;" id="add_article_button" onclick="openNewsCreation()">add article</button>
+    </div>
+
+    <script>
+        hasPermission('news.add', function (result) {
+            if (result) {
+                var buttonElement = document.getElementById('add_article_button');
+                buttonElement.style.display = 'initial';
+            }
+        });
+
+        function openNewsCreation() {
+            document.getElementById('news_form').style.display = 'block';
+        }
+    </script>
+
+    <form id="news_remove_form" method="POST" action="/panel/removenews" style="display: none"></form>
+    <form id="news_edit_form" method="POST" action="/panel/editnews" style="display: none"></form>
+
+    <div id="news_articles" style="margin: 0 5% 0 5%;">
+
+        <button id="load_more_articles_button" onclick="loadMoreNews()" style=" border: none; background-color: #2F2F2F; color: white; padding: 5px; margin: 1% 50% 0 50%;">LoadMore</button>
+    </div>
+</div>

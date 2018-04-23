@@ -1,0 +1,338 @@
+<style>
+
+    #message_table {
+        border-collapse: collapse;
+        width: 100%;
+        height: 400px;
+        margin-bottom: 1%;
+    }
+
+    #message_table tr, #message_table td {
+        border: 2px black solid;
+    }
+
+    #message_header {
+        background-color: #222D32;
+        color: white;
+        display: block;
+        height: 50px;
+        font-size: 30px;
+        line-height: 50px;
+        vertical-align: middle;
+        border-bottom: 2px solid black;
+    }
+
+    #mail_viewer_title {
+        background-color: #7aba7b;
+        margin: 0;
+        border-bottom: 1px solid lightgrey;
+        height: 30px;
+        font-size: 20px;
+        line-height: 30px;
+        vertical-align: middle;
+    }
+
+    #mail_viewer_mail {
+        background-color: #387038;
+        height: 100%;
+        width: 100%;
+    }
+
+    #mail_viewer_from p {
+        display: inline-block;
+        border: 1px solid black;
+        vertical-align: middle;
+        padding: 1%;
+    }
+
+    #mail_viewer_content {
+        border: 1px solid black;
+        padding: 1%;
+        max-height: 300px;
+        overflow-y: scroll;
+        word-break: keep-all;
+    }
+
+    #mail_send {
+        height: 100%;
+        width: 100%;
+        background-color: #0e90d2;
+    }
+
+    #mail_send_title {
+        background-color: #7aba7b;
+        margin: 0;
+        border-bottom: 1px solid lightgrey;
+        height: 30px;
+        font-size: 20px;
+        line-height: 30px;
+        vertical-align: middle;
+    }
+
+    #mail_send_body {
+        height: calc(100% - 30px);
+        background-color: #387038;
+        width: 100%;
+        padding: 1% 3% 3% 3%;
+        color: white;
+    }
+
+    #mail_send_body form input::placeholder {
+        color: white;
+    }
+</style>
+
+<div class="module" id="messages" style="background-color: white; border-radius: 10px; min-height: 500px; max-height: 600px; overflow: hidden; display: none;">
+    <div style="height: 5px; background-color: #00A65A;"></div>
+    <p style="margin: 1% 0 0 3%; font-size: 25px"><%= object.messages %></p>
+
+    <div style="margin: 1% 3% 1% 3%;">
+        <table id="message_table">
+            <tr>
+                <td valign="top" style="width: 20%; background-color: #222D32;">
+                    <ul style="list-style-type: none;">
+                        <li class="menu-item">
+                            <a onclick="toInbox()"><img class="mail-menu-img" src="/images/icons/inbox_icon.png"><%= object.inbox %></a>
+                        </li>
+                        <li class="menu-item">
+                            <a onclick="openSend()"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.send %></a>
+                        </li>
+                        <li class="menu-item">
+                            <a onclick="openConcept()"><img class="mail-menu-img" src="/images/icons/pencil.png"><%= object.concept %></a>
+                        </li>
+                        <li class="menu-item">
+                            <a> <img class="mail-menu-img" src="/images/icons/post send.png"><%= object.sended %></a>
+                        </li>
+                        <li class="menu-item">
+                            <a> <img class="mail-menu-img" src="/images/icons/trash can.png"><%= object.removed %></a>
+                        </li>
+                    </ul>
+                </td>
+
+                <td valign="top" style="height: 100%;">
+                    <div style="height: 100%;">
+                        <div id="message_header">
+                            <div style="border-right: 2px solid black; width: 30%;">
+                                <a onclick="toInbox()" style="color: white; margin-left: 5%; cursor: pointer;">Go back</a>
+                            </div>
+                        </div>
+
+                        <div id="message_content" style="height: calc(100% - 50px);">
+                            <div id="inbox" style="height: 100%;">
+                                <div style="height: 100%;">
+                                    <ul id="inbox_mails" style="list-style-type: none; height: 450px; overflow-y: scroll; margin: 0;">
+
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div id="mail_viewer" style="display: none;">
+                                <div id="mail_viewer_title">
+                                    <p></p>
+                                </div>
+
+                                <div id="mail_viewer_mail" style="padding: 1% 3% 3% 3%; height: calc(100% - 30px);">
+                                    <div id="mail_viewer_from">
+                                        <p>from: </p>
+                                    </div>
+
+                                    <div id="mail_viewer_content">
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="mail_send" style="display: none;">
+                                <div id="mail_send_title">
+                                    <p>Send mail</p>
+                                </div>
+
+                                <div id="mail_send_body">
+                                    <form id="mail_send_form" method="POST" action="/panel/sendmail">
+                                        <input type="text" style="background: none; border: 1px solid black; width: 50%; outline: 0; padding-left: 1%;" name="to" placeholder="To"><br>
+                                        <input type="text" style="background: none; border: 1px solid black; width: 50%; margin-top: 1%; outline: 0; padding-left: 1%;" name="title" placeholder="Title">
+
+                                        <% include utils/editor.ejs %>
+
+                                        <input type="submit" onclick="sendMailForm()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="Send">
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+
+<script>
+
+
+
+    var mails = [];
+
+    var mailFrom = 0;
+    function addMails() {
+        var inboxElement = document.getElementById('inbox');
+        var ulElement = inboxElement.children[0].children[0];
+
+        $.getJSON(window.origin + '/json/getmails/' + mailFrom + '&' + (9+mailFrom), function (data) {
+            for (var index in data.mails) {
+                if (!getMail(data.mails[index].UID)) {
+                    mails[mails.length] = data.mails[index];
+                }
+            }
+
+            mails.sort(function (a, b) {
+                var aTime = new Date(a.date).getTime();
+                var bTime = new Date(b.date).getTime();
+
+                return bTime-aTime;
+            });
+
+            for (var index in mails) {
+                addMailElement(ulElement, index);
+            }
+        });
+
+        mailFrom += 10;
+    }
+
+    function addMailElement(ulElement, index) {
+        var object = mails[index];
+        var from = object.from;
+        var to = object.to;
+        var date = new Date(object.date);
+        var title = object.title;
+
+        var yyyy = date.getFullYear();
+        var mm = date.getMonth()+1;
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+        var dd = date.getDate();
+        var hour = date.getHours();
+        var minutes = date.getMinutes();
+
+        var liElement = document.createElement('li');
+        liElement.setAttribute('style', 'background-color: #00A65A; border-bottom: 1px grey solid;');
+        var aElement = document.createElement('a');
+        aElement.setAttribute('onclick', 'openMail(' + object.UID + ')');
+        aElement.setAttribute('style', 'display: block; cursor: pointer; color: white;');
+        var divElement = document.createElement('div');
+        divElement.setAttribute('style', 'display: inline-block; width: 100%;');
+        var firstPElement = document.createElement('p');
+        firstPElement.setAttribute('style', 'margin: 0 0 0 3%; color: wheat; font-size: 20px;');
+        firstPElement.innerHTML = title;
+        divElement.appendChild(firstPElement);
+        var secondPElement = document.createElement('p');
+        secondPElement.setAttribute('style', 'margin: 0 0 0 5%;');
+        secondPElement.innerHTML = 'from: ' + from.address;
+        divElement.appendChild(secondPElement);
+        var thirdPElement = document.createElement('p');
+        thirdPElement.setAttribute('style', 'margin: 0 1% 0 0; float: right;');
+        thirdPElement.innerHTML = yyyy + '-' + mm + '-' + dd + ' ' + hour + ':' + minutes;
+        divElement.appendChild(thirdPElement);
+        aElement.appendChild(divElement);
+        liElement.appendChild(aElement);
+        ulElement.appendChild(liElement);
+    }
+
+    addMails();
+
+    function openMail(uid) {
+        var inboxElement = document.getElementById('inbox');
+        inboxElement.style.display = 'none';
+
+        var mailViewerElement = document.getElementById('mail_viewer');
+        mailViewerElement.style.display = 'initial';
+
+        var object = getMail(uid);
+
+        var titleElement = document.getElementById('mail_viewer_title');
+        titleElement.children[0].innerHTML = object.title;
+
+        var fromElement = document.getElementById('mail_viewer_from');
+        fromElement.children[0].innerHTML = 'From: ' + object.from.address;
+
+        var contentElement = document.getElementById('mail_viewer_content');
+        contentElement.innerHTML = object.body;
+
+        console.log(object);
+    }
+
+    function getMail(uid) {
+        for (var index in mails) {
+            if (mails[index].UID == uid) {
+                return mails[index];
+            }
+        }
+
+        return false;
+    }
+    
+    function toInbox() {
+        closeOpenMC();
+
+        document.getElementById('inbox').style.display = 'initial';
+    }
+
+    function closeOpenMC() {
+        var contentElement = document.getElementById('message_content');
+
+        for (var index in contentElement.children) {
+            var element = contentElement.children[index];
+
+            if (element.style.display != 'none') {
+                element.style.display = 'none';
+                break;
+            }
+        }
+    }
+
+    function openSend() {
+        closeOpenMC();
+
+        document.getElementById('mail_send').style.display = 'initial';
+    }
+
+    function sendMailForm() {
+        var mailBodyElement = document.getElementById('mail_send_content_div');
+        var textareaBodyElement = document.getElementById('mail_send_content');
+
+        textareaBodyElement.value = mailBodyElement.innerHTML;
+
+        document.getElementById('mail_send_form').submit();
+    }
+
+    $('#inbox_mails').scroll(function() {
+        if(document.getElementById('inbox_mails').scrollHeight - $('#inbox_mails').scrollTop() == $('#inbox_mails').outerHeight()) {
+            $.getJSON(window.origin + '/json/getmails/' + mailFrom + '&' + (4+mailFrom), function (data) {
+
+                if (data.mails.length > 0) {
+                    for (var index in data.mails) {
+                        if (!getMail(data.mails[index].UID)) {
+                            mails[mails.length] = data.mails[index];
+                        }
+                    }
+
+                    mails.sort(function (a, b) {
+                        var aTime = new Date(a.date).getTime();
+                        var bTime = new Date(b.date).getTime();
+
+                        return bTime-aTime;
+                    });
+
+                    for (var index = mailFrom; index < mails.length; index++) {
+                        addMailElement(document.getElementById('inbox_mails'), index);
+                    }
+                }
+
+                mailFrom += data.mails.length;
+
+            });
+        }
+    });
+</script>
