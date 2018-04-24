@@ -153,9 +153,7 @@ router.post('/addagendaitem', function (req, res) {
 
 router.post('/sendmail', function (req, res) {
     if (req.session && req.session.user_id) {
-        messageManager.sendMail(req.session.user_id, req.body.to, req.body.title, req.body.content, function (result) {
-            res.redirect('/panel');
-        });
+        console.log(req.body)
     }
 });
 

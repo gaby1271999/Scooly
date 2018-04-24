@@ -149,7 +149,13 @@
 
                                 <div id="mail_send_body">
                                     <form id="mail_send_form" method="POST" action="/panel/sendmail">
-                                        <input type="text" style="background: none; border: 1px solid black; width: 50%; outline: 0; padding-left: 1%;" name="to" placeholder="To"><br>
+                                        <input type="text" style="background: none; border: 1px solid black; width: 50%; outline: 0; padding-left: 1%; display: inline-block;" name="to" placeholder="To">
+                                        <a onclick="openBCCAndCC()" >bcc and cc</a><br>
+                                        <div id="mail_bcc_and_cc" style="display: none;">
+                                            <input type="text" style="background: none; border: 1px solid black; width: 50%; margin-top: 1%; outline: 0; padding-left: 1%;" name="cc" placeholder="CC"><br>
+                                            <input type="text" style="background: none; border: 1px solid black; width: 50%; margin-top: 1%; outline: 0; padding-left: 1%;" name="bcc" placeholder="BCC"><br>
+                                        </div>
+
                                         <input type="text" style="background: none; border: 1px solid black; width: 50%; margin-top: 1%; outline: 0; padding-left: 1%;" name="title" placeholder="Title">
 
                                         <% include utils/editor.ejs %>
@@ -198,6 +204,16 @@
         });
 
         mailFrom += 10;
+    }
+
+    function openBCCAndCC() {
+        var element = document.getElementById('mail_bcc_and_cc');
+
+        if (element.style.display == 'none') {
+            element.style.display = 'initial';
+        } else {
+            element.style.display = 'none';
+        }
     }
 
     function addMailElement(ulElement, index) {

@@ -16,7 +16,6 @@ var scheduleManager = require('./routes/modules/schedule_manager');
 database.connect();
 database.defaultDatabase();
 
-
 //setup schedules
 scheduleManager.setupSchedules();
 

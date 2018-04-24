@@ -99,6 +99,28 @@ function getGroup(user_id, callback) {
     })
 }
 
+function getUsers(callback) {
+    var sql = "SELECT * FROM users;";
+
+    connection.query(sql, function (error, results) {
+        if (!error) {
+            var list = [];
+            async.each(results, function (result, cb) {
+                list[list.length] = result.username;
+                cb();
+            }, function (error) {
+                if (!error) {
+                    callback(null, list);
+                } else {
+                    callback(error);
+                }
+            });
+        } else {
+            callback(error);
+        }
+    });
+}
+
 function getUserId(username, callback) {
     var sql = "SELECT id FROM users WHERE username=\"" + username + "\";";
     connection.query(sql, function (error, rows) {
@@ -265,15 +287,6 @@ function changeUserGroup(username, group) {
     });
 }
 
-function setOpenedMail(id) {
-    var sql = "UPDATE mail SET opened=1 WHERE id=" + id + ";";
-    connection.query(sql, function (error, result) {
-        if (error) {
-            console.log('Could not set the mail(' + id + ') to opened');
-        }
-    })
-}
-
 function removeUser(username, callback) {
     var sql = "DELETE from users WHERE username=\"" + username + "\";";
     connection.query(sql, function (error, result) {
@@ -384,42 +397,6 @@ function removeAgendaItem(id, user_id, callback) {
         } else {
            return callback(false);
         }
-    });
-}
-
-function getMailAdress(id, callback) {
-    var sql = "SELECT address FROM mail WHERE user_id=" + connection.escape(id) + ";";
-    connection.query(sql, function (error, results) {
-        if (!error) {
-            if (results.length == 1) {
-                return callback(results[0].address);
-            }
-        }
-
-        return callback();
-    });
-}
-
-function addMailAddress(id, password, address, callback) {
-    var sql = "SELECT * FROM mail WHERE user_id=" + id + ";";
-    connection.query(sql, function (error, results) {
-        if (!error) {
-            if (results == 0) {
-                var insertSQL = "INSERT INTO mail(user_id, address) VALUES(" + id + ", " + connection.escape(address) + ");";
-                connection.query(insertSQL, function (error) {
-                    if (!error) {
-                        var insertSQLMailServer = "INSERT INTO virtual_users(domain_id, password , email) VALUES('1', " + mailConnection.escape(password) + ", " + mailConnection.escape(address += '@scooly.eu') + ")";
-                        mailConnection.query(insertSQLMailServer, function (error) {
-                            if (!error) {
-                                return callback(true);
-                            }
-                        });
-                    }
-                })
-            }
-        }
-
-        return callback(false);
     });
 }
 
@@ -751,6 +728,59 @@ function getVisability(path, callback) {
     });
 }
 
+function sendMail(user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
+    var sqlMail = "INSERT INTO mails(from_id, title, body) VALUES(?, ?, ?);";
+    connection.query(sqlMail, [user_id, title, body], function (error, result) {
+        if (!error) {
+            if (result.insertId != undefined) {
+                var sqlLocation = "INSERT INTO mail_location(mail_id, location) VALUES(?, ?);";
+                connection.query(sqlLocation, [result.insertId, 'INBOX'], function (error) {
+                    if (!error) {
+                        async.each(to_ids, function (to_id, cb) {
+                            var sqlTO = "INSERT INTO mail_to(mail_id, to_id) VALUES(?, ?);";
+                            connection.query(sqlTO, [result.insertId, to_id], function (error) {
+                                cb(error);
+                            });
+                        }, function (error) {
+                            if (!error) {
+                                async.each(cc_ids, function (cc_id, cb) {
+                                    var sqlCC = "INSERT INTO mail_cc(mail_id, cc_id) VALUES(?, ?);";
+                                    connection.query(sqlCC, [result.insertId, cc_id], function (error) {
+                                        cb(error);
+                                    });
+                                }, function (error) {
+                                    if (!error) {
+                                        async.each(bcc_ids, function (bcc_id, cb) {
+                                            var sqlBCC = "INSERT INTO mail_bcc(mail_id, bcc_id) VALUES(?, ?);";
+                                            connection.query(sqlBCC, [result.insertId, bcc_id], function (error) {
+                                                cb(error);
+                                            });
+                                        }, function (error) {
+                                            if (!error) {
+                                                callback(null);
+                                            }
+                                        });
+                                    } else {
+                                        callback(error);
+                                    }
+                                });
+                            } else {
+                                callback(error);
+                            }
+                        });
+                    } else {
+                        callback(error);
+                    }
+                });
+            } else {
+                callback(error);
+            }
+        } else {
+            callback(error);
+        }
+    });
+}
+
 function defaultDatabase() {
     var userTable = "CREATE TABLE IF NOT EXISTS users(id INT NOT NULL AUTO_INCREMENT, username VARCHAR(30) NOT NULL, password VARCHAR(60) NOT NULL, PRIMARY KEY (`id`));";
     connection.query(userTable);
@@ -782,6 +812,9 @@ function defaultDatabase() {
 
     var mailToTable = "CREATE TABLE IF NOT EXISTS mail_to(id INT NOT NULL AUTO_INCREMENT, mail_id INT NOT NULL, to_id INT NOT NULL, PRIMARY KEY (`id`));";
     connection.query(mailToTable);
+
+    var mailLocationTable = "CREATE TABLE IF NOT EXISTS mail_location(id INT NOT NULL AUTO_INCREMENT, mail_id INT NOT NULL, location VARCHAR(50) NOT NULL, PRIMARY KEY (`id`));";
+    connection.query(mailLocationTable);
 
     var mailCCTable = "CREATE TABLE IF NOT EXISTS mail_cc(id INT NOT NULL AUTO_INCREMENT, mail_id INT NOT NULL, cc_id INT NOT NULL, PRIMARY KEY (`id`));";
     connection.query(mailCCTable);
@@ -816,7 +849,6 @@ exports.getUsername = getUsername;
 exports.getUserId = getUserId;
 exports.getPassword = getPassword;
 exports.getUserProfilePic = getUserProfilePic;
-exports.setOpenedMail = setOpenedMail;
 exports.changePassword = changePassword;
 exports.getGroup = getGroup;
 exports.addUser = addUser;
@@ -830,8 +862,6 @@ exports.removeNewsArticle = removeNewsArticle;
 exports.updateNewsArticle = updateNewsArticle;
 exports.getAgendaItems = getAgendaItems;
 exports.addAgendaItem = addAgendaItem;
-exports.getMailAdress = getMailAdress;
-exports.addMailAddress = addMailAddress;
 exports.addSubjectNote = addSubjectNote;
 exports.editSubjectNote = editSubjectNote;
 exports.deleteSubjectNote = deleteSubjectNote;
@@ -852,6 +882,8 @@ exports.removeFromClass = removeFromClass;
 exports.addToClass = addToClass;
 exports.changeVisability = changeVisability;
 exports.getVisability = getVisability;
+exports.sendMail = sendMail;
+exports.getUsers = getUsers;
 
 
 

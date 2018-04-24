@@ -87,6 +87,25 @@ router.get('/getmonth/:year&:month', function (req, res) {
     }
 });
 
+router.get('/getusers/:word?', function (req, res) {
+    if (req.session && req.session.user_id) {
+        database.getUsers(function (error, users) {
+            if (!error) {
+                var word = req.params.word;
+
+                users.sort(function (a, b) {
+                    return a.attr.localeCompare(word) - b.attr.localeCompare(word);
+                });
+
+                var newUserList = users.slice(0, 5);
+
+                res.setHeader('Content-type', 'application/json');
+                res.send(JSON.stringify(newUserList));
+            }
+        });
+    }
+});
+
 router.get('/getgroups/:word', function (req, res) {
     if (req.session && req.session.user_id) {
         var groupList = permissionManager.getAllGroups(permissionManager.groups);
