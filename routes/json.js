@@ -94,7 +94,35 @@ router.get('/getusers/:word?', function (req, res) {
                 var word = req.params.word;
 
                 users.sort(function (a, b) {
-                    return a.attr.localeCompare(word) - b.attr.localeCompare(word);
+                    return a.length - b.length;
+                });
+
+                users.sort(function (a, b) {
+                    var aCount = 0;
+                    var bCount = 0;
+                    for (var index in word) {
+                        for (var aIndex in a) {
+                            if (a[aIndex].toLocaleLowerCase() == word[index].toLocaleLowerCase()) {
+                                aCount++;
+                                break;
+                            }
+                        }
+
+                        for (var bIndex in b) {
+                            if (b[bIndex].toLocaleLowerCase() == word[index].toLocaleLowerCase()) {
+                                bCount++;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (aCount > bCount) {
+                        return -1;
+                    } else if (aCount < bCount) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
                 });
 
                 var newUserList = users.slice(0, 5);
