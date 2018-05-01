@@ -2,102 +2,59 @@ var fs = require('fs');
 var inbox = require('inbox');
 var nodemailer = require('nodemailer');
 var async = require('async');
-var mailparser = require('mailparser');
 var database = require(__dirname.replace('modules', 'database'));
 
 
-function getMailsObject(id, address, from, to, cb) {
+function getMailsObject(id, from, to, location, callback) {
+    if (to-from >= 15) {
+        callback([]);
+    } else {
+        database.getMails(function (mails) {
+            var list = [];
 
-        /*
-        if (to-from <= 10) {
-            database.getPassword(id, function (password) {
-                var client = inbox.createConnection(993, "5.189.160.80", {
-                    secureConnection: true,
-                    auth: {
-                        user: address + "@scooly.eu",
-                        pass: password
+            async.each(mails, function (mail, cb) {
+                database.inLocation(mail.id, id, location, function (result) {
+                    if (result) {
+                        database.getUsername(mail.from_id, function (error, username) {
+                            if (!error) {
+                                database.mailInfo(mail.id, id, function (error, header) {
+                                    if (!error) {
+                                        database.isMailOpened(mail.id, id, function (error, opened) {
+                                            if (!error) {
+                                                delete mail['from_id'];
+                                                mail['from'] = username;
+                                                mail['header'] = header;
+                                                mail['opened'] = opened;
+
+                                                list[list.length] = mail;
+                                                cb();
+                                            } else {
+                                                cb();
+                                            }
+                                        });
+                                    } else {
+                                        cb();
+                                    }
+                                });
+                            } else {
+                                cb();
+                            }
+                        });
+                    } else {
+                        cb();
                     }
                 });
-
-                client.connect();
-
-                client.on('error', function () {
-                    console.log('error to mail server')
-                    client.close();
-
-                    return cb([]);
+            }, function () {
+                list.sort(function (a, b) {
+                    return new Date(b.date) - new Date(a.date);
                 });
 
-                client.on('connect', function () {
-                    console.log('inbox ready');
+                var newList = list.slice(from, to);
 
-                    client.openMailbox("INBOX", true, function (error, info) {
-                        if (error) {
-                            return cb([]);
-                        }
-
-                        async.waterfall([
-                                function (callback) {
-                                    client.listMessagesByUID((info.UIDNext - 1 - to) < 1 ? 1 : (info.UIDNext - 1 - to), info.UIDNext - 1 - from, function (err, messages) {
-                                        if (!error) {
-                                            return callback(null, messages);
-                                        }
-
-                                        return callback(err);
-                                    });
-                                },
-
-                                function (messages, callback) {
-                                    var inbox = {amount: info.count, mails: []};
-
-                                    async.each(messages, function (message, callback) {
-                                        var object = {};
-
-                                        object['mailbox'] = "INBOX";
-                                        object['UID'] = message.UID;
-                                        object['from'] = message.from;
-                                        object['to'] = message.to;
-                                        if (message.cc != undefined) {
-                                            object['cc'] = message.cc;
-                                        }
-                                        if (message.bcc != undefined) {
-                                            object['bcc'] = message.bcc;
-                                        }
-                                        object['title'] = message.title;
-                                        object['date'] = message.date;
-
-                                        var messageStream = client.createMessageStream(message.UID);
-
-                                        mailparser.simpleParser(messageStream).then(function (mail) {
-                                            object['body'] = mail.html;
-
-                                            inbox.mails[inbox.mails.length] = object;
-                                            callback();
-                                        });
-                                    }, function (err) {
-                                        if (!err) {
-                                            callback(null, inbox);
-                                        }
-                                    });
-                                }],
-
-                            function (error, result) {
-                                if (!error) {
-                                    cb(result);
-                                }
-
-                                client.close();
-
-                                if (error) {
-                                    return cb([]);
-                                }
-                            });
-                    });
-                });
+                callback(newList);
             });
-        } else {
-            return cb([]);
-        }*/
+        });
+    }
 }
 
 function sendMail(id, to, title, body, callback) {

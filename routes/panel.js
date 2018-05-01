@@ -154,6 +154,87 @@ router.post('/addagendaitem', function (req, res) {
 router.post('/sendmail', function (req, res) {
     if (req.session && req.session.user_id) {
         console.log(req.body)
+
+        var to = [];
+        if (req.body.to != undefined) {
+            if (req.body.to.constructor === Array) {
+                to = req.body.to;
+            } else {
+                to[to.length] = req.body.to;
+            }
+        }
+
+        var cc = [];
+        if (req.body.cc != undefined) {
+            if (req.body.cc.constructor === Array) {
+                cc = req.body.cc;
+            } else {
+                cc[cc.length] = req.body.cc;
+            }
+        }
+
+        var bcc = [];
+        if (req.body.bcc != undefined) {
+            if (req.body.bcc.constructor === Array) {
+                bcc = req.body.bcc;
+            } else {
+                bcc[bcc.length] = req.body.bcc;
+            }
+        }
+
+        async.series([
+            function (callback) {
+                var to_ids = [];
+
+                async.each(to, function (t, cb) {
+                    database.getUserId(t, function (error, id) {
+                        if (!error) {
+                            to_ids[to_ids.length] = id;
+                        }
+
+                        cb();
+                    });
+                }, function () {
+                    callback(null, to_ids);
+                });
+            },
+
+            function (callback) {
+                var cc_ids = [];
+
+                async.each(cc, function (c, cb) {
+                    database.getUserId(c, function (error, id) {
+                        if (!error) {
+                            cc_ids[cc_ids.length] = id;
+                        }
+
+                        cb();
+                    });
+                }, function () {
+                    callback(null, cc_ids);
+                });
+            },
+
+            function (callback) {
+                var bcc_ids = [];
+
+                async.each(bcc, function (b, cb) {
+                    database.getUserId(b, function (error, id) {
+                        if (!error) {
+                            bcc_ids[bcc_ids.length] = id;
+                        }
+
+                        cb();
+                    });
+                }, function () {
+                    callback(null, bcc_ids);
+                });
+            }
+        ], function (error, results) {
+            database.sendMail(req.session.user_id, results[0], results[1], results[2], req.body.title, req.body.content, function (error) {
+                res.redirect('/panel');
+            });
+        });
     }
 });
 

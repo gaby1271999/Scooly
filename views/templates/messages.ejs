@@ -4,7 +4,6 @@
         border-collapse: collapse;
         width: 100%;
         height: 400px;
-        margin-bottom: 1%;
     }
 
     #message_table tr, #message_table td {
@@ -20,37 +19,6 @@
         line-height: 50px;
         vertical-align: middle;
         border-bottom: 2px solid black;
-    }
-
-    #mail_viewer_title {
-        background-color: #7aba7b;
-        margin: 0;
-        border-bottom: 1px solid lightgrey;
-        height: 30px;
-        font-size: 20px;
-        line-height: 30px;
-        vertical-align: middle;
-    }
-
-    #mail_viewer_mail {
-        background-color: #387038;
-        height: 100%;
-        width: 100%;
-    }
-
-    #mail_viewer_from p {
-        display: inline-block;
-        border: 1px solid black;
-        vertical-align: middle;
-        padding: 1%;
-    }
-
-    #mail_viewer_content {
-        border: 1px solid black;
-        padding: 1%;
-        max-height: 300px;
-        overflow-y: scroll;
-        word-break: keep-all;
     }
 
     #mail_send {
@@ -122,9 +90,14 @@
         transition: 500ms;
         color: white;
     }
+
+    .inbox_mails_item:hover {
+        background-color: #008944;
+        transition: 1s;
+    }
 </style>
 
-<div class="module" id="messages" style="background-color: white; border-radius: 10px; min-height: 500px; max-height: 600px; overflow: hidden; display: none;">
+<div class="module" id="messages" style="background-color: white; border-radius: 10px; min-height: 500px; overflow: hidden; display: none;">
     <div style="height: 5px; background-color: #00A65A;"></div>
     <p style="margin: 1% 0 0 3%; font-size: 25px"><%= object.messages %></p>
 
@@ -134,7 +107,7 @@
                 <td valign="top" style="width: 20%; background-color: #222D32;">
                     <ul style="list-style-type: none;">
                         <li class="menu-item">
-                            <a onclick="toInbox()"><img class="mail-menu-img" src="/images/icons/inbox_icon.png"><%= object.inbox %></a>
+                            <a onclick="inbox.toMenuItem()"><img class="mail-menu-img" src="/images/icons/inbox_icon.png"><%= object.inbox %></a>
                         </li>
                         <li class="menu-item">
                             <a onclick="openSend()"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.send %></a>
@@ -143,83 +116,120 @@
                             <a onclick="openConcept()"><img class="mail-menu-img" src="/images/icons/pencil.png"><%= object.concept %></a>
                         </li>
                         <li class="menu-item">
-                            <a> <img class="mail-menu-img" src="/images/icons/post send.png"><%= object.sended %></a>
+                            <a onclick="sent.toMenuItem()"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.sended %></a>
                         </li>
                         <li class="menu-item">
-                            <a> <img class="mail-menu-img" src="/images/icons/trash can.png"><%= object.removed %></a>
+                            <a onclick="removed.toMenuItem()"><img class="mail-menu-img" src="/images/icons/trash can.png"><%= object.removed %></a>
                         </li>
                     </ul>
                 </td>
 
                 <td valign="top" style="height: 100%;">
-                    <div style="height: 100%;">
-                        <div id="message_header">
-                            <div style="border-right: 2px solid black; width: 30%;">
-                                <a onclick="toInbox()" style="color: white; margin-left: 5%; cursor: pointer;">Go back</a>
+                    <div id="message_content" style="height: 100%;">
+                        <div id="inbox" style="height: 100%;">
+                            <div style="height: 100%; background-color: #00DF79;">
+                                <table id="inbox_mails" style="width: 100%; border: 0;">
+                                    <tr style="border: 0; border-bottom: 1px solid black; background-color: #00A65A;">
+                                        <th style="width: 80%; border: 0; padding-left: 5%; border-right: 1px solid black;">Name</th>
+                                        <th style="border: 0; text-align: center;">Date</th>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
 
-                        <div id="message_content" style="height: calc(100% - 50px);">
-                            <div id="inbox" style="height: 100%;">
-                                <div style="height: 100%;">
-                                    <ul id="inbox_mails" style="list-style-type: none; height: 450px; overflow-y: scroll; margin: 0;">
-
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div id="mail_viewer" style="display: none;">
-                                <div id="mail_viewer_title">
-                                    <p></p>
+                        <div id="mail_viewer" style="display: none; height: 100%;">
+                            <div style="background-color: #00DF79; height: 100%; max-height: 750px; overflow-y: scroll;">
+                                <div style="background-color: #00A65A; height: 30px; font-size: 20px; border-bottom: 1px solid white;">
+                                    <p style="padding-left: 10px; margin: 0; display: inline-block;">Mail vieuwer</p>
+                                    
+                                    <a id="mail_viewer_remove_button" style="float: right; margin-right: 5%;"><img style="height: 20px; width: auto;" src="/images/icons/mail_trash_icon.png"></a>
                                 </div>
 
-                                <div id="mail_viewer_mail" style="padding: 1% 3% 3% 3%; height: calc(100% - 30px);">
-                                    <div id="mail_viewer_from">
-                                        <p>from: </p>
+                                <div style="margin: 2% 5% 2% 5%;">
+                                    <div style="border: 1px solid black; padding: 5px;">
+                                        <p id="mail_viewer_from" style="margin: 0;"></p>
+                                        <hr style="margin: 0; color: black;">
+                                        <p id="mail_viewer_to" style="margin: 0;"></p>
                                     </div>
 
-                                    <div id="mail_viewer_content">
+                                    <h4 id="mail_viewer_title" style="border: 1px solid black; padding: 5px;"></h4>
 
-                                    </div>
+                                    <div id="mail_viewer_body" style="border: 1px solid black; padding: 5px; min-height: 150px; max-height: 300px; overflow-y: scroll;"></div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div id="mail_send" style="display: none;">
-                                <div id="mail_send_title">
-                                    <p>Send mail</p>
-                                </div>
+                        <div id="mail_send" style="display: none;">
+                            <div id="mail_send_title">
+                                <p>Send mail</p>
+                            </div>
 
-                                <div id="mail_send_body">
-                                    <form id="mail_send_form" autocomplete="off" method="POST" action="/panel/sendmail">
-                                        <div style="border: 1px solid black; width: 50%; display: inline-block; overflow-x: inherit; padding: 5px;">
-                                            <div style="display: table">
-                                                <div class="autocomplete" style="width: 100%; display: table-cell;">
-                                                   <span id="mail_send_to" style="">
-                                                       <input type="text" style="width: 100%; border: 0; outline: 0; background: 0; padding-left: 1%; min-width: 30px;" oninput="getAutoComplete(this, 'mail_send_to', 'mail_send_to_autocomplete')" name="to" placeholder="To">
-                                                   </span>
+                            <div id="mail_send_body">
+                                <form id="mail_send_form" autocomplete="off" method="POST" action="/panel/sendmail">
+                                    <div style="border: 1px solid black; width: 50%; display: inline-block; padding: 5px;">
+                                        <div style="display: table; width: 100%;">
+                                            <div class="autocomplete" style="display: table-cell;">
+                                                <div id="mail_send_to" style="display: flex;">
+                                                   <textarea id="mail_send_to" rows="1" maxlength="50" style="flex: 1; padding: 5px; resize: none; border: 0; outline: 0; background: 0;" oninput="getAutoComplete(this, 'mail_send_to', 'mail_send_to_autocomplete', 'to')" placeholder="To"></textarea>
                                                 </div>
                                             </div>
                                         </div>
-                                        <a onclick="openBCCAndCC()" >bcc and cc</a><br>
-                                        <div id="mail_bcc_and_cc" style="display: none;">
-                                            <div class="autocomplete" style="border: 1px solid black; width: 50%; margin-top: 1%;">
-                                                <input type="text" id="mail_send_cc" style="background: none; border: none; width: 100%; padding-left: 1%; outline: 0;" oninput="getAutoComplete(this)" name="cc" placeholder="CC">
-                                            </div>
+                                    </div>
 
-                                            <div class="autocomplete" style="border: 1px solid black; width: 50%; margin-top: 1%;">
-                                                <input type="text" id="mail_send_bcc" style="background: none; border: none; width: 100%; padding-left: 1%; outline: 0;" oninput="getAutoComplete(this)" name="bcc" placeholder="BCC">
+                                    <a onclick="openBCCAndCC()" style="cursor: pointer; color: white;">bcc and cc</a><br>
+
+                                    <div id="mail_bcc_and_cc" style="display: none;">
+                                        <div style="border: 1px solid black; width: 50%; display: inline-block; padding: 5px;">
+                                            <div style="display: table; width: 100%;">
+                                                <div class="autocomplete" style="display: table-cell;">
+                                                    <div id="mail_send_cc" style="display: flex;">
+                                                        <textarea id="mail_send_cc" rows="1" maxlength="50" style="flex: 1; padding: 5px; resize: none; border: 0; outline: 0; background: 0;" oninput="getAutoComplete(this, 'mail_send_cc', 'mail_send_cc_autocomplete', 'cc')" placeholder="CC"></textarea>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <input type="text" style="background: none; border: 1px solid black; width: 50%; margin-top: 1%; outline: 0; padding-left: 1%;" name="title" placeholder="Title">
+                                        <div style="border: 1px solid black; width: 50%; display: inline-block; padding: 5px;">
+                                            <div style="display: table; width: 100%;">
+                                                <div class="autocomplete" style="display: table-cell;">
+                                                    <div id="mail_send_bcc" style="display: flex;">
+                                                        <textarea id="mail_send_bcc" rows="1" maxlength="50" style="flex: 1; padding: 5px; resize: none; border: 0; outline: 0; background: 0;" oninput="getAutoComplete(this, 'mail_send_bcc', 'mail_send_bcc_autocomplete', 'bcc')" placeholder="BCC"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                        <% include utils/editor.ejs %>
+                                    <input type="text" style="background: none; border: 1px solid black; width: 50%; margin-top: 1%; outline: 0; padding-left: 1%;" name="title" placeholder="Title">
 
-                                        <input type="submit" onclick="sendMailForm()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="Send">
+                                    <% include utils/editor.ejs %>
 
-                                        <div id="mail_input_hidden" style="display: none"></div>
-                                    </form>
-                                </div>
+                                    <input type="submit" onclick="sendMailForm()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="Send">
+
+                                    <div id="mail_input_hidden" style="display: none"></div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div id="sent_mails" style="height: 100%; display: none;">
+                            <div style="height: 100%; background-color: #00DF79;">
+                                <table id="sent_mails_inbox" style="width: 100%; border: 0;">
+                                    <tr style="border: 0; border-bottom: 1px solid black; background-color: #00A65A;">
+                                        <th style="width: 80%; border: 0; padding-left: 5%; border-right: 1px solid black;">Name</th>
+                                        <th style="border: 0; text-align: center;">Date</th>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="removed_mails" style="height: 100%; display: none;">
+                            <div style="height: 100%; background-color: #00DF79;">
+                                <table id="removed_mails_inbox" style="width: 100%; border: 0;">
+                                    <tr style="border: 0; border-bottom: 1px solid black; background-color: #00A65A;">
+                                        <th style="width: 80%; border: 0; padding-left: 5%; border-right: 1px solid black;">Name</th>
+                                        <th style="border: 0; text-align: center;">Date</th>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -237,39 +247,109 @@
             if (e.target.className != 'autocomplete-item') {
                 document.getElementById('mail_send_to_autocomplete').parentNode.removeChild(document.getElementById('mail_send_to_autocomplete'));
             }
+        } else if (document.getElementById('mail_send_cc_autocomplete') != undefined) {
+            if (e.target.className != 'autocomplete-item') {
+                document.getElementById('mail_send_cc_autocomplete').parentNode.removeChild(document.getElementById('mail_send_cc_autocomplete'));
+            }
+        } else if (document.getElementById('mail_send_bcc_autocomplete') != undefined) {
+            if (e.target.className != 'autocomplete-item') {
+                document.getElementById('mail_send_bcc_autocomplete').parentNode.removeChild(document.getElementById('mail_send_bcc_autocomplete'));
+            }
         }
     }, false);
 
-    var mails = [];
+    function AddMails(id, tableId, location) {
+        this.element = document.getElementById(id);
+        this.tableElement = document.getElementById(tableId);
+        this.location = location;
+        this.mails = [];
+        this.mailFrom = 0;
 
-    var mailFrom = 0;
-    function addMails() {
-        var inboxElement = document.getElementById('inbox');
-        var ulElement = inboxElement.children[0].children[0];
+        this.addMails = function (obj, clear) {
+            if (clear) {
+                this.mails = [];
+                this.mailFrom = 0;
 
-        $.getJSON(window.origin + '/json/getmails/' + mailFrom + '&' + (9+mailFrom), function (data) {
-            for (var index in data.mails) {
-                if (!getMail(data.mails[index].UID)) {
-                    mails[mails.length] = data.mails[index];
+                while (this.tableElement.children.length > 1) {
+                    this.tableElement.removeChild(this.tableElement.lastChild);
                 }
             }
 
-            mails.sort(function (a, b) {
-                var aTime = new Date(a.date).getTime();
-                var bTime = new Date(b.date).getTime();
+            $.getJSON(window.origin + '/json/getmails/' + obj.mailFrom + '&' + (9+obj.mailFrom) + '&' + obj.location, function (data) {
+                for (var i in data) {
+                    var object = data[i];
 
-                return bTime-aTime;
+                    var contains = false;
+                    for (var index in obj.mails) {
+                        if (obj.mails[index].id == object.id) {
+                            contains = true;
+                            break;
+                        }
+                    }
+
+                    if (!contains) {
+                        obj.mails[obj.mails.length] = object;
+                    }
+
+                    createMail(obj.tableElement, object);
+                }
             });
 
-            for (var index in mails) {
-                addMailElement(ulElement, index);
-            }
-        });
+            obj.mailFrom += 10;
+        }
 
-        mailFrom += 10;
+        this.toMenuItem = function () {
+            closeOpenMC();
+
+            this.addMails(this, true);
+
+            this.element.style.display = 'initial';
+        }
     }
 
-    function getAutoComplete(element, id, acId) {
+    var inbox = new AddMails('inbox', 'inbox_mails', 'INBOX');
+    var sent = new AddMails('sent_mails', 'sent_mails_inbox', 'SENT');
+    var removed = new AddMails('removed_mails', 'removed_mails_inbox', 'TRASH');
+
+    inbox.addMails(inbox, true);
+
+    function createMail(tableElement, object) {
+        var trElement = document.createElement('tr');
+        trElement.setAttribute('onclick', 'openMail(' + object.id + ')');
+        trElement.setAttribute('class', 'inbox_mails_item');
+        trElement.setAttribute('style', 'border: 0; ' + (!object.opened ? 'color: #E64C34; font-weight: bold; ' : '') + ' border-bottom: 1px solid grey; cursor: pointer;');
+
+        var td1Element = document.createElement('td');
+        td1Element.setAttribute('style', 'padding: 2px; border: 0;');
+        td1Element.innerHTML = '<span style="display: block; font-weight: bold; padding-left: 5px;">' + object.from + '</span><span style="display: block; padding-left: 20px;">' + object.title + '</span>';
+        trElement.appendChild(td1Element);
+
+
+        var td2Element = document.createElement('td');
+        td2Element.setAttribute('style', 'padding: 2px; border: 0;');
+        var date = new Date(object.date);
+
+        var dd;
+        if (date.getDate() < 10) {
+            dd = '0' + date.getDate();
+        } else {
+            dd = date.getDate();
+        }
+
+        var mm;
+        if (date.getMonth()+1 < 10) {
+            mm = '0' + (date.getMonth()+1);
+        } else {
+            mm = (date.getMonth()+1);
+        }
+
+        td2Element.innerHTML = dd + '/' + mm + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + date.getMinutes();
+        trElement.appendChild(td2Element);
+
+        tableElement.appendChild(trElement);
+    }
+
+    function getAutoComplete(element, id, acId, name) {
         $.getJSON(window.origin + '/json/getusers/' + element.value, function (data) {
             console.log(data);
 
@@ -286,35 +366,49 @@
                 var aElement = document.createElement('a');
                 aElement.setAttribute('class', 'autocomplete-item');
                 aElement.setAttribute('style', 'display: block; padding: 5px; cursor: pointer;');
-                aElement.setAttribute('onclick', 'selectItem(this, \'' + id + '\', \'' + acId + '\')');
+                aElement.setAttribute('onclick', 'selectItem(this, \'' + id + '\', \'' + acId + '\', \'' + name + '\')');
                 aElement.innerHTML = data[i];
                 divElement.appendChild(aElement);
             }
         });
     }
 
-    function selectItem(element, id, acId) {
+    function selectItem(element, id, acId, name) {
+        var divElement = document.getElementById('mail_input_hidden');
+
         var spanElement = document.getElementById(id);
         spanElement.children[0].value = '';
 
-        var newSpanElement = document.createElement('span');
-        newSpanElement.setAttribute('style', 'display: inline-block;margin-right: 5px; margin-bottom: 5px;');
-        var aElement = document.createElement('a');
-        aElement.setAttribute('onclick', 'removeSelectedItem(this)');
-        aElement.setAttribute('class', 'mail_name_block');
-        aElement.innerHTML = element.innerHTML;
-        newSpanElement.appendChild(aElement);
-        spanElement.parentNode.insertBefore(newSpanElement, spanElement);
+
+        var addItem = true;
+        for (var i in divElement.children) {
+            var child = divElement.children[i];
+            if (child.value == element.innerHTML) {
+                addItem = false;
+            }
+        }
+
+        if (addItem) {
+            var newSpanElement = document.createElement('span');
+            newSpanElement.setAttribute('style', 'display: inline-block; margin-right: 5px; margin-bottom: 5px;');
+            var aElement = document.createElement('a');
+            aElement.setAttribute('onclick', 'removeSelectedItem(this)');
+            aElement.setAttribute('class', 'mail_name_block');
+            aElement.innerHTML = element.innerHTML;
+            newSpanElement.appendChild(aElement);
+            spanElement.parentNode.insertBefore(newSpanElement, spanElement);
+        }
 
         var autoCElement = document.getElementById(acId);
         autoCElement.parentNode.removeChild(autoCElement);
 
-        var divElement = document.getElementById('mail_input_hidden');
-        var inputElement = document.createElement('input');
-        inputElement.setAttribute('type', 'text');
-        inputElement.setAttribute('name', 'to');
-        inputElement.setAttribute('value', element.innerHTML);
-        divElement.appendChild(inputElement);
+        if (addItem) {
+            var inputElement = document.createElement('input');
+            inputElement.setAttribute('type', 'text');
+            inputElement.setAttribute('name', name);
+            inputElement.setAttribute('value', element.innerHTML);
+            divElement.appendChild(inputElement);
+        }
     }
 
     function removeSelectedItem(element) {
@@ -331,14 +425,6 @@
         }
     }
 
-    function checkChange(element) {
-        if (element.value == 0) {
-            document.getElementById('mail_send_to_input').style.display = 'none';
-
-            document.getElementById('mail_send_to').style.width = '100%';
-        }
-    }
-
     function openBCCAndCC() {
         var element = document.getElementById('mail_bcc_and_cc');
 
@@ -349,67 +435,53 @@
         }
     }
 
-    function addMailElement(ulElement, index) {
-        var object = mails[index];
-        var from = object.from;
-        var to = object.to;
-        var date = new Date(object.date);
-        var title = object.title;
+    function openMail(id) {
+        var object;
 
-        var yyyy = date.getFullYear();
-        var mm = date.getMonth()+1;
-        if (mm < 10) {
-            mm = '0' + mm;
+        for (var index in inbox.mails) {
+            if (inbox.mails[index].id == id) {
+                object = inbox.mails[index];
+                break;
+            }
         }
-        var dd = date.getDate();
-        var hour = date.getHours();
-        var minutes = date.getMinutes();
 
-        var liElement = document.createElement('li');
-        liElement.setAttribute('style', 'background-color: #00A65A; border-bottom: 1px grey solid;');
-        var aElement = document.createElement('a');
-        aElement.setAttribute('onclick', 'openMail(' + object.UID + ')');
-        aElement.setAttribute('style', 'display: block; cursor: pointer; color: white;');
-        var divElement = document.createElement('div');
-        divElement.setAttribute('style', 'display: inline-block; width: 100%;');
-        var firstPElement = document.createElement('p');
-        firstPElement.setAttribute('style', 'margin: 0 0 0 3%; color: wheat; font-size: 20px;');
-        firstPElement.innerHTML = title;
-        divElement.appendChild(firstPElement);
-        var secondPElement = document.createElement('p');
-        secondPElement.setAttribute('style', 'margin: 0 0 0 5%;');
-        secondPElement.innerHTML = 'from: ' + from.address;
-        divElement.appendChild(secondPElement);
-        var thirdPElement = document.createElement('p');
-        thirdPElement.setAttribute('style', 'margin: 0 1% 0 0; float: right;');
-        thirdPElement.innerHTML = yyyy + '-' + mm + '-' + dd + ' ' + hour + ':' + minutes;
-        divElement.appendChild(thirdPElement);
-        aElement.appendChild(divElement);
-        liElement.appendChild(aElement);
-        ulElement.appendChild(liElement);
+        if (object != undefined) {
+            document.getElementById('mail_viewer_from').innerHTML = 'From: ' + object.from;
+
+            console.log(object);
+
+            var to = '';
+            for (var key in object.header) {
+                for (var i in object.header[key]) {
+                    if (to.length == 0) {
+                        to = object.header[key][i];
+                    } else {
+                        to += ', ' + object.header[key][i];
+                    }
+                }
+            }
+
+            document.getElementById('mail_viewer_to').innerHTML = 'To: ' + to;
+            document.getElementById('mail_viewer_title').innerHTML = object.title;
+            document.getElementById('mail_viewer_body').innerHTML = object.body;
+
+            document.getElementById('mail_viewer_remove_button').setAttribute('onclick', 'removeMail(' + object.id + ')');
+
+            document.getElementById('inbox').style.display = 'none';
+            document.getElementById('mail_viewer').style.display = 'block';
+
+            $.ajax({
+                url: window.origin + '/json/openmail/' + id,
+                type: 'GET'
+            });
+        }
     }
 
-    addMails();
-
-    function openMail(uid) {
-        var inboxElement = document.getElementById('inbox');
-        inboxElement.style.display = 'none';
-
-        var mailViewerElement = document.getElementById('mail_viewer');
-        mailViewerElement.style.display = 'initial';
-
-        var object = getMail(uid);
-
-        var titleElement = document.getElementById('mail_viewer_title');
-        titleElement.children[0].innerHTML = object.title;
-
-        var fromElement = document.getElementById('mail_viewer_from');
-        fromElement.children[0].innerHTML = 'From: ' + object.from.address;
-
-        var contentElement = document.getElementById('mail_viewer_content');
-        contentElement.innerHTML = object.body;
-
-        console.log(object);
+    function removeMail(id) {
+        $.ajax({
+            url: window.origin + '/json/deletemail/' + id,
+            type: 'GET'
+        });
     }
 
     function getMail(uid) {
@@ -420,12 +492,6 @@
         }
 
         return false;
-    }
-    
-    function toInbox() {
-        closeOpenMC();
-
-        document.getElementById('inbox').style.display = 'initial';
     }
 
     function closeOpenMC() {

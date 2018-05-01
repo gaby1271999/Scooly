@@ -53,18 +53,36 @@ router.get('/haspermission/:permission', function (req, res) {
     }
 });
 
-router.get('/getmails/:from&:to', function (req, res) {
+router.get('/getmails/:from&:to&:location', function (req, res) {
     if (req.session && req.session.user_id) {
-        /*database.getMailAdress(req.session.user_id, function (address) {
-            console.log(address)
-            messageManager.getMailsObject(req.session.user_id, address, req.params.from, req.params.to, function (mails) {
-                res.setHeader('Content-type', 'application/json');
-                res.send(JSON.stringify(mails));
-            });
-        });*/
+        messageManager.getMailsObject(req.session.user_id, req.params.from, req.params.to, req.params.location, function (list) {
+            res.setHeader('Content-type', 'application/json');
+            res.send(list);
+        });
+    } else {
+        res.status(err.status || 500);
+        res.render('error');
+    }
+});
 
-        res.setHeader('Content-type', 'application/json');
-        res.send([]);
+router.get('/openmail/:mail_id', function (req, res) {
+    if (req.session && req.session.user_id) {
+        database.openMail(req.params.mail_id, req.session.user_id, function (error) {
+            res.setHeader('Content-type', 'application/json');
+            res.send([]);
+        });
+    } else {
+        res.status(err.status || 500);
+        res.render('error');
+    }
+});
+
+router.get('/deletemail/:mail_id', function (req, res) {
+    if (req.session && req.session.user_id) {
+        database.changeLocation(req.params.mail_id, req.session.user_id, 'INBOX', 'TRASH', function (error) {
+            res.setHeader('Content-type', 'application/json');
+            res.send([]);
+        });
     } else {
         res.status(err.status || 500);
         res.render('error');
@@ -218,12 +236,10 @@ router.get('/getclasses', function (req, res) {
 });
 
 router.get('/changefilevisability/:visability&:path', function (req, res) {
-    console.log(req.params.visability)
-    console.log(req.params.path)
-        database.changeVisability(req.params.visability, req.session.user_id + '/' + req.params.path, function (error) {
-            res.setHeader('Content-type', 'application/json');
-            res.send(JSON.stringify([]));
-        });
+    database.changeVisability(req.params.visability, req.session.user_id + '/' + req.params.path, function (error) {
+        res.setHeader('Content-type', 'application/json');
+        res.send(JSON.stringify([]));
+    });
 });
 
 module.exports = router;
