@@ -1,6 +1,3 @@
-var fs = require('fs');
-var inbox = require('inbox');
-var nodemailer = require('nodemailer');
 var async = require('async');
 var database = require(__dirname.replace('modules', 'database'));
 
@@ -57,69 +54,4 @@ function getMailsObject(id, from, to, location, callback) {
     }
 }
 
-function sendMail(id, to, title, body, callback) {
-    database.getMailAdress(id, function (address) {
-        database.getPassword(id, function (password) {
-            var transporter = nodemailer.createTransport({
-                host: 'scooly.eu',
-                secure: true,
-                port: 465,
-                auth: {
-                    user: address + '@scooly.eu',
-                    pass: password
-                },
-                tls: {
-                    rejectUnauthorized: false
-                }
-            });
-
-            var mailOptions = {
-                from: address + '@scooly.eu',
-                to: to,
-                subject: title,
-                html: body
-            }
-
-            transporter.sendMail(mailOptions, function (error) {
-                if (!error) {
-                    console.log('sended');
-                    return callback(true);
-                } else {
-                    return callback(false);
-                }
-            });
-        });
-    });
-}
-
-function getMailboxes(id, address) {
-    database.getPassword(id, function (password) {
-        var client = inbox.createConnection(993, "5.189.160.80", {
-            secureConnection: true,
-            auth: {
-                user: address + "@scooly.eu",
-                pass: password
-            }
-        });
-
-        client.connect();
-
-        client.on('error', function () {
-            client.close();
-        });
-
-        client.on('connect', function () {
-            client.moveMessage(15, "INBOX", function(err){
-                console.log(err || "success, moved to junk");
-            });
-
-            client.listMailboxes(function(error, mailboxes){
-                console.log(mailboxes);
-            });
-        });
-    });
-}
-
 exports.getMailsObject = getMailsObject;
-exports.sendMail = sendMail;
-exports.getMailboxes = getMailboxes;

@@ -105,9 +105,9 @@
         <table id="message_table">
             <tr>
                 <td valign="top" style="width: 20%; background-color: #222D32;">
-                    <ul style="list-style-type: none;">
+                    <ul id="message_menu" style="list-style-type: none;">
                         <li class="menu-item">
-                            <a onclick="inbox.toMenuItem()"><img class="mail-menu-img" src="/images/icons/inbox_icon.png"><%= object.inbox %></a>
+                            <a onclick="inbox.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/inbox_icon.png"><%= object.inbox %></a>
                         </li>
                         <li class="menu-item">
                             <a onclick="openSend()"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.send %></a>
@@ -116,10 +116,10 @@
                             <a onclick="openConcept()"><img class="mail-menu-img" src="/images/icons/pencil.png"><%= object.concept %></a>
                         </li>
                         <li class="menu-item">
-                            <a onclick="sent.toMenuItem()"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.sended %></a>
+                            <a onclick="sent.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.sended %></a>
                         </li>
                         <li class="menu-item">
-                            <a onclick="removed.toMenuItem()"><img class="mail-menu-img" src="/images/icons/trash can.png"><%= object.removed %></a>
+                            <a onclick="removed.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/trash can.png"><%= object.removed %></a>
                         </li>
                     </ul>
                 </td>
@@ -260,6 +260,7 @@
 
     function AddMails(id, tableId, location) {
         this.element = document.getElementById(id);
+        this.id = id;
         this.tableElement = document.getElementById(tableId);
         this.location = location;
         this.mails = [];
@@ -291,19 +292,35 @@
                         obj.mails[obj.mails.length] = object;
                     }
 
-                    createMail(obj.tableElement, object);
+                    createMail(obj.tableElement, object, obj.id);
                 }
             });
 
             obj.mailFrom += 10;
         }
 
-        this.toMenuItem = function () {
+        this.toMenuItem = function (element) {
             closeOpenMC();
 
             this.addMails(this, true);
 
             this.element.style.display = 'initial';
+
+
+            var ulElement = document.getElementById('message_menu');
+            for (var index in ulElement.children) {
+                if (!isNaN(index)) {
+                    var aElement = ulElement.children[index].children[0];
+
+                    if (aElement != undefined) {
+                        if (aElement.style.backgroundColor.length > 0) {
+                            aElement.style.backgroundColor = '';
+                        }
+                    }
+                }
+            }
+
+            element.style.backgroundColor = '#374C55';
         }
     }
 
@@ -313,9 +330,9 @@
 
     inbox.addMails(inbox, true);
 
-    function createMail(tableElement, object) {
+    function createMail(tableElement, object, elementId) {
         var trElement = document.createElement('tr');
-        trElement.setAttribute('onclick', 'openMail(' + object.id + ')');
+        trElement.setAttribute('onclick', 'openMail(\'' + elementId + '\', ' + object.id + ')');
         trElement.setAttribute('class', 'inbox_mails_item');
         trElement.setAttribute('style', 'border: 0; ' + (!object.opened ? 'color: #E64C34; font-weight: bold; ' : '') + ' border-bottom: 1px solid grey; cursor: pointer;');
 
@@ -435,7 +452,7 @@
         }
     }
 
-    function openMail(id) {
+    function openMail(parentId, id) {
         var object;
 
         for (var index in inbox.mails) {
@@ -447,8 +464,6 @@
 
         if (object != undefined) {
             document.getElementById('mail_viewer_from').innerHTML = 'From: ' + object.from;
-
-            console.log(object);
 
             var to = '';
             for (var key in object.header) {
@@ -467,7 +482,7 @@
 
             document.getElementById('mail_viewer_remove_button').setAttribute('onclick', 'removeMail(' + object.id + ')');
 
-            document.getElementById('inbox').style.display = 'none';
+            document.getElementById(parentId).style.display = 'none';
             document.getElementById('mail_viewer').style.display = 'block';
 
             $.ajax({

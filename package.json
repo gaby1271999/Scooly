@@ -12,6 +12,17 @@
     "ejs": "~2.5.6",
     "express": "~4.15.2",
     "morgan": "~1.8.1",
-    "serve-favicon": "~2.4.2"
+    "serve-favicon": "~2.4.2",
+    "mysql": "latest",
+    "express-fileupload": "latest",
+    "express-session": "latest",
+    "path": "latest",
+    "async": "latest",
+    "fs": "latest",
+    "fs-extra": "latest",
+    "yaml-config": "latest",
+    "exceljs": "latest",
+    "jimp": "latest",
+    "bcryptjs": "latest"
   }
 }
