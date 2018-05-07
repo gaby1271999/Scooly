@@ -151,90 +151,112 @@ router.post('/addagendaitem', function (req, res) {
     }
 });
 
-router.post('/sendmail', function (req, res) {
-    if (req.session && req.session.user_id) {
-        console.log(req.body)
+function namesToList(names) {
+    var list = [];
 
-        var to = [];
-        if (req.body.to != undefined) {
-            if (req.body.to.constructor === Array) {
-                to = req.body.to;
-            } else {
-                to[to.length] = req.body.to;
-            }
+    if (names != undefined) {
+        if (names.constructor === Array) {
+            list = names;
+        } else {
+            list[list.length] = names;
         }
+    }
 
-        var cc = [];
-        if (req.body.cc != undefined) {
-            if (req.body.cc.constructor === Array) {
-                cc = req.body.cc;
-            } else {
-                cc[cc.length] = req.body.cc;
-            }
-        }
+    return list;
+}
 
-        var bcc = [];
-        if (req.body.bcc != undefined) {
-            if (req.body.bcc.constructor === Array) {
-                bcc = req.body.bcc;
-            } else {
-                bcc[bcc.length] = req.body.bcc;
-            }
-        }
+function getMailIdsConverter(to_names, cc_names, bcc_names, callback) {
+    var to = namesToList(to_names);
+    var cc = namesToList(cc_names);
+    var bcc = namesToList(bcc_names);
 
-        async.series([
-            function (callback) {
-                var to_ids = [];
+    async.series([
+        function (callback) {
+            var to_ids = [];
 
-                async.each(to, function (t, cb) {
-                    database.getUserId(t, function (error, id) {
-                        if (!error) {
-                            to_ids[to_ids.length] = id;
-                        }
+            async.each(to, function (t, cb) {
+                database.getUserId(t, function (error, id) {
+                    if (!error) {
+                        to_ids[to_ids.length] = id;
+                    }
 
-                        cb();
-                    });
-                }, function () {
-                    callback(null, to_ids);
+                    cb();
                 });
-            },
-
-            function (callback) {
-                var cc_ids = [];
-
-                async.each(cc, function (c, cb) {
-                    database.getUserId(c, function (error, id) {
-                        if (!error) {
-                            cc_ids[cc_ids.length] = id;
-                        }
-
-                        cb();
-                    });
-                }, function () {
-                    callback(null, cc_ids);
-                });
-            },
-
-            function (callback) {
-                var bcc_ids = [];
-
-                async.each(bcc, function (b, cb) {
-                    database.getUserId(b, function (error, id) {
-                        if (!error) {
-                            bcc_ids[bcc_ids.length] = id;
-                        }
-
-                        cb();
-                    });
-                }, function () {
-                    callback(null, bcc_ids);
-                });
-            }
-        ], function (error, results) {
-            database.sendMail(req.session.user_id, results[0], results[1], results[2], req.body.title, req.body.content, function (error) {
-                res.redirect('/panel');
+            }, function () {
+                callback(null, to_ids);
             });
+        },
+
+        function (callback) {
+            var cc_ids = [];
+
+            async.each(cc, function (c, cb) {
+                database.getUserId(c, function (error, id) {
+                    if (!error) {
+                        cc_ids[cc_ids.length] = id;
+                    }
+
+                    cb();
+                });
+            }, function () {
+                callback(null, cc_ids);
+            });
+        },
+
+        function (callback) {
+            var bcc_ids = [];
+
+            async.each(bcc, function (b, cb) {
+                database.getUserId(b, function (error, id) {
+                    if (!error) {
+                        bcc_ids[bcc_ids.length] = id;
+                    }
+
+                    cb();
+                });
+            }, function () {
+                callback(null, bcc_ids);
+            });
+        }
+    ], function (error, results) {
+        callback(results[0], results[1], results[2]);
+    });
+}
+
+router.post('/sendmail/:id?', function (req, res) {
+    if (req.session && req.session.user_id) {
+        getMailIdsConverter(req.body.to, req.body.cc, req.body.bcc, function (res1, res2, res3) {
+            if (req.params.id != undefined) {
+                database.sendConcept(req.params.id, req.session.user_id, res1, res2, res3, req.body.title, req.body.content, function (error) {
+                    console.log(error);
+                    res.redirect('/panel');
+                });
+            } else {
+                getMailIdsConverter(req.body.to, req.body.cc, req.body.bcc, function (res1, res2, res3) {
+                    database.sendMail(req.session.user_id, res1, res2, res3, req.body.title, req.body.content, function (error) {
+                        res.redirect('/panel');
+                    });
+                });
+            }
         });
+    }
+});
+
+router.post('/sendconcept/:id?', function (req, res) {
+    if (req.session && req.session.user_id) {
+        if (req.params.id != undefined) {
+            getMailIdsConverter(JSON.parse(req.body.to), JSON.parse(req.body.cc), JSON.parse(req.body.bcc), function (res1, res2, res3) {
+                database.updateConcept(req.params.id, req.session.user_id, res1, res2, res3, req.body.title, req.body.body, function (error) {
+                    res.redirect('/panel');
+                });
+            });
+        } else {
+            getMailIdsConverter(JSON.parse(req.body.to), JSON.parse(req.body.cc), JSON.parse(req.body.bcc), function (res1, res2, res3) {
+                database.addConcept(req.session.user_id, res1, res2, res3, req.body.title, req.body.body, function (error) {
+                    res.redirect('/panel');
+                });
+            });
+        }
     }
 });
 

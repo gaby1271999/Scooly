@@ -93,8 +93,8 @@ router.get('/getmonth/:year&:month', function (req, res) {
     if (req.session && req.session.user_id) {
         var date = new Date(req.params.year, req.params.month);
 
-        database.getGroup(req.session.user_id, function (groupName) {
-            agendaManager.getMonth(date, req.session.user_id, groupName, function (itemList) {
+        database.getUserClassName(req.session.user_id, function (error, className) {
+            agendaManager.getMonth(date, req.session.user_id, className, function (itemList) {
                 res.setHeader('Content-type', 'application/json');
                 res.send(JSON.stringify(itemList));
             });

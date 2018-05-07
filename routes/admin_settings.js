@@ -79,7 +79,10 @@ router.post('/user_group', function(req, res) {
 router.post('/user_class', function(req, res) {
     var list = [];
 
+    console.log(req.body)
     for (var i = 0; i < Object.keys(req.body).length; i++) {
+        console.log(req.body)
+
         var object = {};
         var key = Object.keys(req.body)[i];
 
@@ -89,6 +92,9 @@ router.post('/user_class', function(req, res) {
     }
 
     database.addToClass(list, function (error, result) {
+        console.log(error)
+        console.log(result)
+
         if (!error) {
             var encodedString = encodeURIComponent('updates the users.');
             res.redirect('/admin/?result=' + encodedString);

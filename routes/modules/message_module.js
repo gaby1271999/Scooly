@@ -7,6 +7,7 @@ function getMailsObject(id, from, to, location, callback) {
         callback([]);
     } else {
         database.getMails(function (mails) {
+
             var list = [];
 
             async.each(mails, function (mail, cb) {
@@ -22,6 +23,7 @@ function getMailsObject(id, from, to, location, callback) {
                                                 mail['from'] = username;
                                                 mail['header'] = header;
                                                 mail['opened'] = opened;
+                                                mail['location'] = location;
 
                                                 list[list.length] = mail;
                                                 cb();

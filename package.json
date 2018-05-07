@@ -24,5 +24,6 @@
     "exceljs": "latest",
     "jimp": "latest",
     "bcryptjs": "latest"
+    "busboy": "latest"
   }
 }

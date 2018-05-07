@@ -107,13 +107,13 @@
                 <td valign="top" style="width: 20%; background-color: #222D32;">
                     <ul id="message_menu" style="list-style-type: none;">
                         <li class="menu-item">
-                            <a onclick="inbox.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/inbox_icon.png"><%= object.inbox %></a>
+                            <a id="menu-item-inbox" onclick="inbox.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/inbox_icon.png"><%= object.inbox %></a>
                         </li>
                         <li class="menu-item">
-                            <a onclick="openSend()"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.send %></a>
+                            <a id="menu-item-send" onclick="openSend(this)"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.send %></a>
                         </li>
                         <li class="menu-item">
-                            <a onclick="openConcept()"><img class="mail-menu-img" src="/images/icons/pencil.png"><%= object.concept %></a>
+                            <a onclick="concept.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/pencil.png"><%= object.concept %></a>
                         </li>
                         <li class="menu-item">
                             <a onclick="sent.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.sended %></a>
@@ -142,7 +142,7 @@
                                 <div style="background-color: #00A65A; height: 30px; font-size: 20px; border-bottom: 1px solid white;">
                                     <p style="padding-left: 10px; margin: 0; display: inline-block;">Mail vieuwer</p>
                                     
-                                    <a id="mail_viewer_remove_button" style="float: right; margin-right: 5%;"><img style="height: 20px; width: auto;" src="/images/icons/mail_trash_icon.png"></a>
+                                    <a id="mail_viewer_remove_button" style="float: right; margin-right: 5%;"><img style="height: 20px; width: auto;" src="/images/icons/trash_can_black.png"></a>
                                 </div>
 
                                 <div style="margin: 2% 5% 2% 5%;">
@@ -155,6 +155,9 @@
                                     <h4 id="mail_viewer_title" style="border: 1px solid black; padding: 5px;"></h4>
 
                                     <div id="mail_viewer_body" style="border: 1px solid black; padding: 5px; min-height: 150px; max-height: 300px; overflow-y: scroll;"></div>
+
+                                    <button id="mail_viewer_edit_concept" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center; display: none;">Edit concept</button>
+                                    <button id="mail_viewer_reply" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center; display: none;">Reply</button>
                                 </div>
                             </div>
                         </div>
@@ -200,14 +203,26 @@
                                         </div>
                                     </div>
 
-                                    <input type="text" style="background: none; border: 1px solid black; width: 50%; margin-top: 1%; outline: 0; padding-left: 1%;" name="title" placeholder="Title">
+                                    <input type="text" id="mail_send_form_title" style="background: none; border: 1px solid black; width: 50%; margin-top: 1%; outline: 0; padding-left: 1%;" name="title" placeholder="Title">
 
                                     <% include utils/editor.ejs %>
 
-                                    <input type="submit" onclick="sendMailForm()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="Send">
+                                    <input type="submit" id="mail_send_submit" onclick="sendMailForm()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="Send">
+                                    <input type="button" id="mail_send_concept" onclick="sendConcept()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="Add to concept">
 
                                     <div id="mail_input_hidden" style="display: none"></div>
                                 </form>
+                            </div>
+                        </div>
+
+                        <div id="concept_mails" style="height: 100%; display: none;">
+                            <div style="height: 100%; background-color: #00DF79;">
+                                <table id="concept_mails_inbox" style="width: 100%; border: 0;">
+                                    <tr style="border: 0; border-bottom: 1px solid black; background-color: #00A65A;">
+                                        <th style="width: 80%; border: 0; padding-left: 5%; border-right: 1px solid black;">Name</th>
+                                        <th style="border: 0; text-align: center;">Date</th>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
 
@@ -268,8 +283,7 @@
 
         this.addMails = function (obj, clear) {
             if (clear) {
-                this.mails = [];
-                this.mailFrom = 0;
+                clearMails();
 
                 while (this.tableElement.children.length > 1) {
                     this.tableElement.removeChild(this.tableElement.lastChild);
@@ -300,6 +314,8 @@
         }
 
         this.toMenuItem = function (element) {
+            forConcept();
+
             closeOpenMC();
 
             this.addMails(this, true);
@@ -307,26 +323,28 @@
             this.element.style.display = 'initial';
 
 
-            var ulElement = document.getElementById('message_menu');
-            for (var index in ulElement.children) {
-                if (!isNaN(index)) {
-                    var aElement = ulElement.children[index].children[0];
-
-                    if (aElement != undefined) {
-                        if (aElement.style.backgroundColor.length > 0) {
-                            aElement.style.backgroundColor = '';
-                        }
-                    }
-                }
-            }
-
-            element.style.backgroundColor = '#374C55';
+            setMailMenuSelectedColor(element);
         }
+    }
+
+    function clearMails() {
+        inbox.mails = [];
+        inbox.mailFrom = 0;
+
+        sent.mails = [];
+        sent.mailFrom = 0;
+
+        removed.mails = [];
+        removed.mailFrom = 0;
+
+        concept.mails = [];
+        concept.mailFrom = 0;
     }
 
     var inbox = new AddMails('inbox', 'inbox_mails', 'INBOX');
     var sent = new AddMails('sent_mails', 'sent_mails_inbox', 'SENT');
     var removed = new AddMails('removed_mails', 'removed_mails_inbox', 'TRASH');
+    var concept = new AddMails('concept_mails', 'concept_mails_inbox', 'CONCEPT');
 
     inbox.addMails(inbox, true);
 
@@ -368,8 +386,6 @@
 
     function getAutoComplete(element, id, acId, name) {
         $.getJSON(window.origin + '/json/getusers/' + element.value, function (data) {
-            console.log(data);
-
             if (document.getElementById(acId) != undefined) {
                 document.getElementById(acId).parentNode.removeChild(document.getElementById(acId));
             }
@@ -452,8 +468,8 @@
         }
     }
 
-    function openMail(parentId, id) {
-        var object;
+    function getInboxObject(id) {
+        var object = {};
 
         for (var index in inbox.mails) {
             if (inbox.mails[index].id == id) {
@@ -461,6 +477,33 @@
                 break;
             }
         }
+
+        for (var index in sent.mails) {
+            if (sent.mails[index].id == id) {
+                object = sent.mails[index];
+                break;
+            }
+        }
+
+        for (var index in removed.mails) {
+            if (removed.mails[index].id == id) {
+                object = removed.mails[index];
+                break;
+            }
+        }
+
+        for (var index in concept.mails) {
+            if (concept.mails[index].id == id) {
+                object = concept.mails[index];
+                break;
+            }
+        }
+
+        return object;
+    }
+
+    function openMail(parentId, id) {
+        var object = getInboxObject(id);
 
         if (object != undefined) {
             document.getElementById('mail_viewer_from').innerHTML = 'From: ' + object.from;
@@ -480,6 +523,15 @@
             document.getElementById('mail_viewer_title').innerHTML = object.title;
             document.getElementById('mail_viewer_body').innerHTML = object.body;
 
+            document.getElementById('mail_viewer_edit_concept').style.display = object.location == 'CONCEPT' ? 'initial' : 'none';
+            if (object.location == 'CONCEPT') {
+                document.getElementById('mail_viewer_edit_concept').setAttribute('onclick', 'openConcept(' + object.id + ')');
+            }
+
+            console.log((object.location != 'INBOX' ? 'none' : 'initial'))
+            document.getElementById('mail_viewer_reply').style.display = (object.location != 'INBOX' ? 'none' : 'initial');
+            document.getElementById('mail_viewer_reply').setAttribute('onclick', 'reply(' + object.id + ')');
+
             document.getElementById('mail_viewer_remove_button').setAttribute('onclick', 'removeMail(' + object.id + ')');
 
             document.getElementById(parentId).style.display = 'none';
@@ -489,6 +541,139 @@
                 url: window.origin + '/json/openmail/' + id,
                 type: 'GET'
             });
+        }
+    }
+
+    function reply(id) {
+        var object = getInboxObject(id);
+
+        if (object != undefined) {
+            closeOpenMC();
+
+            clearSendHeader();
+
+            setMailMenuSelectedColor(document.getElementById('menu-item-send'));
+
+            if (object.header.to != undefined) {
+                for (var index in object.header.to) {
+                    addHeaderItem(object.header.to[index], 'mail_send_to', 'to');
+                }
+            }
+
+            if (object.header.cc != undefined) {
+                for (var index in object.header.cc) {
+                    addHeaderItem(object.header.cc[index], 'mail_send_cc', 'cc');
+                }
+            }
+
+            if (object.header.bcc != undefined) {
+                for (var index in object.header.bcc) {
+                    addHeaderItem(object.header.bcc[index], 'mail_send_bcc', 'bcc');
+                }
+            }
+
+            document.getElementById('mail_send_form_title').value = object.title + '(reply)';
+            var date = new Date(object.date);
+
+            var dd;
+            if (date.getDate() < 10) {
+                dd = '0' + date.getDate();
+            } else {
+                dd = date.getDate();
+            }
+
+            var mm;
+            if (date.getMonth()+1 < 10) {
+                mm = '0' + (date.getMonth()+1);
+            } else {
+                mm = (date.getMonth()+1);
+            }
+
+            document.getElementById('mail_send_content_div').innerHTML = '<hr style="margin: 0;"><p>' + object.title + ' <span style="color: black; margin-left: 5%; margin-right: 5%;">from:' + object.from + '</span> ' + dd + '/' + mm + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + date.getMinutes() + '</p><br>' + object.body;
+
+            document.getElementById('mail_send').style.display = 'block';
+        }
+    }
+    
+    function clearSendHeader() {
+        var toInputElement = document.getElementById('mail_send_to');
+        while (toInputElement.parentNode.firstChild.id != 'mail_send_to') {
+            toInputElement.parentNode.removeChild(toInputElement.parentNode.firstChild);
+        }
+
+        var ccInputElement = document.getElementById('mail_send_cc');
+        while (ccInputElement.parentNode.firstChild.id != 'mail_send_cc') {
+            ccInputElement.parentNode.removeChild(ccInputElement.parentNode.firstChild);
+        }
+
+        var bccInputElement = document.getElementById('mail_send_bcc');
+        while (bccInputElement.parentNode.firstChild.id != 'mail_send_bcc') {
+            bccInputElement.parentNode.removeChild(bccInputElement.parentNode.firstChild);
+        }
+
+        document.getElementById('mail_bcc_and_cc').style.display = 'none';
+
+        var hiddenElement = document.getElementById('mail_input_hidden');
+        while (hiddenElement.firstChild) {
+            hiddenElement.removeChild(hiddenElement.firstChild);
+        }
+    }
+
+    function addHeaderItem(username, id, name) {
+        var divElement = document.getElementById('mail_input_hidden');
+        var spanElement = document.getElementById(id);
+
+
+        var newSpanElement = document.createElement('span');
+        newSpanElement.setAttribute('style', 'display: inline-block; margin-right: 5px; margin-bottom: 5px;');
+        var aElement = document.createElement('a');
+        aElement.setAttribute('onclick', 'removeSelectedItem(this)');
+        aElement.setAttribute('class', 'mail_name_block');
+        aElement.innerHTML = username;
+        newSpanElement.appendChild(aElement);
+        spanElement.parentNode.insertBefore(newSpanElement, spanElement);
+
+        var inputElement = document.createElement('input');
+        inputElement.setAttribute('type', 'text');
+        inputElement.setAttribute('name', name);
+        inputElement.setAttribute('value', username);
+        divElement.appendChild(inputElement);
+    }
+
+    function openConcept(id) {
+        var object = getInboxObject(id);
+
+        if (object != undefined) {
+            closeOpenMC();
+
+            clearSendHeader();
+
+            if (object.header.to != undefined) {
+                for (var index in object.header.to) {
+                    addHeaderItem(object.header.to[index], 'mail_send_to', 'to');
+                }
+            }
+
+            if (object.header.cc != undefined) {
+                for (var index in object.header.cc) {
+                    addHeaderItem(object.header.cc[index], 'mail_send_cc', 'cc');
+                }
+            }
+
+            if (object.header.bcc != undefined) {
+                for (var index in object.header.bcc) {
+                    addHeaderItem(object.header.bcc[index], 'mail_send_bcc', 'bcc');
+                }
+            }
+
+            document.getElementById('mail_send_submit').setAttribute('onclick', 'sendMailForm(' + object.id + ')');
+            document.getElementById('mail_send_concept').setAttribute('onclick', 'sendConcept(' + object.id + ')');
+
+            document.getElementById('mail_send_form_title').value = object.title;
+            document.getElementById('mail_send_content_div').innerHTML = object.body;
+
+            document.getElementById('mail_send').style.display = 'block';
+            setMailMenuSelectedColor(document.getElementById('menu-item-send'));
         }
     }
 
@@ -522,19 +707,50 @@
         }
     }
 
-    function openSend() {
+    function setMailMenuSelectedColor(element) {
+        var ulElement = document.getElementById('message_menu');
+        for (var index in ulElement.children) {
+            if (!isNaN(index)) {
+                var aElement = ulElement.children[index].children[0];
+
+                if (aElement != undefined) {
+                    if (aElement.style.backgroundColor.length > 0) {
+                        aElement.style.backgroundColor = '';
+                    }
+                }
+            }
+        }
+
+        element.style.backgroundColor = '#374C55';
+    }
+
+    function openSend(element) {
+        forConcept();
+
         closeOpenMC();
+
+        setMailMenuSelectedColor(element);
+
+        clearSendHeader();
+
+        document.getElementById('mail_send_form_title').value = '';
+        document.getElementById('mail_send_content_div').innerHTML = '';
 
         document.getElementById('mail_send').style.display = 'initial';
     }
 
-    function sendMailForm() {
+    function sendMailForm(id) {
         var mailBodyElement = document.getElementById('mail_send_content_div');
         var textareaBodyElement = document.getElementById('mail_send_content');
 
         textareaBodyElement.value = mailBodyElement.innerHTML;
 
-        document.getElementById('mail_send_form').submit();
+        var formElement = document.getElementById('mail_send_form');
+        if (id != undefined) {
+            formElement.setAttribute('action', '/panel/sendmail/' + id);
+        }
+
+        formElement.submit();
     }
 
     $('#inbox_mails').scroll(function() {
@@ -565,4 +781,95 @@
             });
         }
     });
+
+    function sendConcept(id) {
+        var toNames = [];
+        var ccNames = [];
+        var bccNames = [];
+
+        var element = document.getElementById('mail_input_hidden');
+
+        for (var index in element.children) {
+            var inputElement = element.children[index];
+
+            if (inputElement.name == 'to') {
+                toNames[toNames.length] = inputElement.value;
+                continue;
+            } else if (inputElement.name == 'cc') {
+                ccNames[ccNames.length] = inputElement.value;
+                continue;
+            } else if (inputElement.name == 'bcc') {
+                bccNames[bccNames.length] = inputElement.value;
+                continue;
+            }
+        }
+
+        conceptSendPost(toNames, ccNames, bccNames, document.getElementById('mail_send_form_title').value, document.getElementById('mail_send_content_div').innerHTML, id);
+    }
+
+    function conceptSendPost(id, toNames, ccNames, bccNames, title, body) {
+        $.ajax({
+            url: window.origin + '/panel/sendconcept' + (id == undefined ? '' : '/' + id),
+            type: 'POST',
+            data: {
+                to: JSON.stringify(toNames),
+                cc: JSON.stringify(ccNames),
+                bcc: JSON.stringify(bccNames),
+                title: title,
+                body: body
+            }
+        });
+    }
+
+    var conceptObject = {};
+
+    function forConcept() {
+        if (document.getElementById('mail_send').style.display != 'none') {
+            if (document.getElementById('mail_send_form_title').value != '') {
+                conceptObject = {};
+
+                var toNames = [];
+                var ccNames = [];
+                var bccNames = [];
+
+                var element = document.getElementById('mail_input_hidden');
+
+                for (var index in element.children) {
+                    var inputElement = element.children[index];
+
+                    if (inputElement.name == 'to') {
+                        toNames[toNames.length] = inputElement.value;
+                        continue;
+                    } else if (inputElement.name == 'cc') {
+                        ccNames[ccNames.length] = inputElement.value;
+                        continue;
+                    } else if (inputElement.name == 'bcc') {
+                        bccNames[bccNames.length] = inputElement.value;
+                        continue;
+                    }
+                }
+
+                conceptObject['to_names'] = toNames;
+                conceptObject['cc_names'] = ccNames;
+                conceptObject['bcc_names'] = bccNames;
+                conceptObject['title'] = document.getElementById('mail_send_form_title').value;
+                conceptObject['body'] =  document.getElementById('mail_send_content_div').innerHTML;
+
+                document.getElementById('mail_concept_question_window').style.display = 'initial';
+                document.getElementById('background_overlay').style.display = 'initial';
+            }
+        }
+    }
+
+    function noConcept() {
+        conceptObject = {};
+
+        closePopup();
+    }
+
+    function yesConcept() {
+        conceptSendPost(conceptObject.to_names, conceptObject.cc_names, conceptObject.bcc_names, conceptObject.title, conceptObject.body);
+
+        closePopup();
+    }
 </script>

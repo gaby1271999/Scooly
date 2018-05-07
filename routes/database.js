@@ -329,8 +329,8 @@ function updateNewsArticle(id, title, description, callback) {
     });
 }
 
-function getAgendaItems(id, groupName, callback) {
-    var sql = "SELECT *, DATE_FORMAT(creation_date, \"%Y-%c-%d-%H-%i\") AS creation_date, DATE_FORMAT(delivery_date, \"%Y-%c-%d-%H-%i\") AS delivery_date FROM agenda WHERE user_id=" + connection.escape(id) + " OR group_name=" + connection.escape(groupName) + ";";
+function getAgendaItems(id, className, callback) {
+    var sql = "SELECT *, DATE_FORMAT(creation_date, \"%Y-%c-%d-%H-%i\") AS creation_date, DATE_FORMAT(delivery_date, \"%Y-%c-%d-%H-%i\") AS delivery_date FROM agenda WHERE user_id=" + connection.escape(id) + " OR group_name=" + connection.escape(className) + ";";
     connection.query(sql, function (error, results) {
        if (!error) {
            return callback(results);
@@ -477,7 +477,7 @@ function getUserClassName(id, callback) {
                 }
             }
 
-            callback('ERROR', null);
+            callback('ERROR');
         });
     });
 }
@@ -643,6 +643,8 @@ function getAllClasses(callback) {
 }
 
 function addToClass(changes, callback) {
+    console.log(changes);
+
     async.each(changes, function (object, cb) {
         var userName = Object.keys(object)[0];
 
@@ -854,7 +856,11 @@ function isMailOpened(mail_id, user_id, callback) {
 
     connection.query(sql, [mail_id, user_id], function (error, result) {
        if (!error) {
-           return callback(null, result[0].opened == 1 ? true : false);
+           if (result.length > 0) {
+               return callback(null, result[0].opened == 1 ? true : false);
+           } else {
+               return callback(null, true);
+           }
        }
 
        callback(error);
@@ -876,10 +882,26 @@ function inLocation(mail_id, user_id, location, callback) {
 }
 
 function openMail(mail_id, user_id, callback) {
-    var sql = "UPDATE mail_opened SET opened=? WHERE mail_id=? AND user_id=?;";
+    var sql = "SELECT * FROM mail_location WHERE mail_id=? AND user_id=?;";
 
-    connection.query(sql, [1, mail_id, user_id], function (error) {
-        callback(error);
+    connection.query(sql, [mail_id, user_id], function (error, results) {
+        if (!error) {
+            if (results.length > 0) {
+                if (results[0].location != 'CONCEPT') {
+                    var openSQL = "UPDATE mail_opened SET opened=? WHERE mail_id=? AND user_id=?;";
+
+                    connection.query(openSQL, [1, mail_id, user_id], function (error) {
+                        return callback(error);
+                    });
+                } else {
+                    callback('ERROR');
+                }
+            } else {
+                callback('ERROR');
+            }
+        } else {
+            callback(error);
+        }
     });
 }
 
@@ -1063,10 +1085,229 @@ function mailInfo(mail_id, user_id, callback) {
                     });
                 }
             } else {
-                callback('ERROR');
+                callback(null, {});
             }
         } else {
             callback('ERROR');
+        }
+    });
+}
+
+function addConcept(user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
+    var sqlMail = "INSERT INTO mails(from_id, title, body, date) VALUES(?, ?, ?, NOW());";
+    connection.query(sqlMail, [user_id, title, body], function (error, result) {
+        if (!error) {
+            if (result.insertId != undefined) {
+                addMailLocation(result.insertId, user_id, 'CONCEPT', function (error) {
+                    if (!error) {
+                        async.each(to_ids, function (to_id, cb) {
+                            var sqlTO = "INSERT INTO mail_to(mail_id, to_id) VALUES(?, ?);";
+                            connection.query(sqlTO, [result.insertId, to_id], function (error) {
+                                cb(error);
+                            });
+                        }, function (error) {
+                            if (!error) {
+                                async.each(cc_ids, function (cc_id, cb) {
+                                    var sqlCC = "INSERT INTO mail_cc(mail_id, cc_id) VALUES(?, ?);";
+                                    connection.query(sqlCC, [result.insertId, cc_id], function (error) {
+                                        cb(error);
+                                    });
+                                }, function (error) {
+                                    if (!error) {
+                                        async.each(bcc_ids, function (bcc_id, cb) {
+                                            var sqlBCC = "INSERT INTO mail_bcc(mail_id, bcc_id) VALUES(?, ?);";
+                                            connection.query(sqlBCC, [result.insertId, bcc_id], function (error) {
+                                                cb(error);
+                                            });
+                                        }, function (error) {
+                                            if (!error) {
+                                                callback(null);
+                                            }
+                                        });
+                                    } else {
+                                        callback(error);
+                                    }
+                                });
+                            } else {
+                                callback(error);
+                            }
+                        });
+                    } else {
+                        callback(error);
+                    }
+                });
+            } else {
+                callback(error);
+            }
+        } else {
+            callback(error);
+        }
+    });
+}
+
+function addOrRemoveReceivers(table, mail_id, column, receiver_ids, callback) {
+    var sqlReceiver = "SELECT * FROM " + table + " WHERE mail_id=?;";
+
+    connection.query(sqlReceiver, [mail_id], function (error, results) {
+        if (!error) {
+            async.each(receiver_ids, function (receiver_id, cb) {
+                var contains = false;
+
+                if (results.length > 0) {
+                    for (var index in results) {
+                        var object = results[index];
+
+                        if (receiver_id == object[column]) {
+                            contains = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!contains) {
+                    var sqlAdd = "INSERT INTO " + table + "(mail_id, " + column + ") VALUES(?, ?);";
+
+                    connection.query(sqlAdd, [mail_id, receiver_id], function (error) {
+                        cb();
+                    });
+                } else {
+                    cb();
+                }
+            }, function () {
+                if (results.length > 0) {
+                    async.each(results, function (result, cb) {
+                        var contains = false;
+
+                        for (var index in receiver_ids) {
+                            var id = receiver_ids[index];
+
+                            if (id == result[column]) {
+                                contains = true;
+                                break;
+                            }
+                        }
+
+                        if (!contains) {
+                            var sqlDelete = "DELETE FROM " + table + " WHERE id=?;";
+
+                            connection.query(sqlDelete, [result.id], function () {
+                                cb();
+                            });
+                        } else {
+                            cb();
+                        }
+                    }, function () {
+                        callback(null);
+                    });
+                } else {
+                    callback(null);
+                }
+            });
+        } else {
+            callback('ERROR');
+        }
+    });
+}
+
+function updateConcept(mail_id, user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
+    var sqlMail = "SELECT * FROM mails WHERE id=? AND from_id=?;";
+    connection.query(sqlMail, [mail_id, user_id], function (error, results) {
+        if (!error) {
+            if (results.length > 0) {
+                var updateMailSQL = "UPDATE mails SET title=?, body=?, date=NOW() WHERE id=?;";
+
+                connection.query(updateMailSQL, [title, body, mail_id], function (error) {
+                    if (!error) {
+                        addOrRemoveReceivers('mail_to', mail_id, 'to_id', to_ids, function (error) {
+                           if (!error) {
+                               addOrRemoveReceivers('mail_cc', mail_id, 'cc_id', cc_ids, function (error) {
+                                   if (!error) {
+                                       addOrRemoveReceivers('mail_bcc', mail_id, 'bcc_id', bcc_ids, function (error) {
+                                           callback(error);
+                                       });
+                                   } else {
+                                       callback(error);
+                                   }
+                               });
+                           } else {
+                               callback(error);
+                           }
+                        });
+                    } else {
+                        callback(error);
+                    }
+                });
+            } else {
+                callback('ERROR');
+            }
+        } else {
+            callback(error);
+        }
+    });
+}
+
+function sendConcept(mail_id, user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
+    updateConcept(mail_id, user_id, to_ids, cc_ids, bcc_ids, title, body, function (error) {
+        if (!error) {
+            var sqlLocation = "UPDATE mail_location SET location=? WHERE mail_id=? AND user_id=?;";
+
+            connection.query(sqlLocation, ['SENT', mail_id, user_id], function (error) {
+               if (!error) {
+                   async.each(to_ids, function (to_id, cb) {
+                       addMailLocation(mail_id, to_id, 'INBOX', function (error) {
+                           if (!error) {
+                               addMailOpened(mail_id, to_id, function (error) {
+                                   cb(error);
+                               });
+                           } else {
+                               cb(error);
+                           }
+                       });
+                   }, function (error) {
+                       if (!error) {
+                           async.each(cc_ids, function (cc_id, cb) {
+                               addMailLocation(mail_id, cc_id, 'INBOX', function (error) {
+                                   if (!error) {
+                                       addMailOpened(mail_id, cc_id, function (error) {
+                                           cb(error);
+                                       });
+                                   } else {
+                                       cb(error);
+                                   }
+                               });
+                           }, function (error) {
+                               if (!error) {
+                                   async.each(bcc_ids, function (bcc_id, cb) {
+                                       addMailLocation(mail_id, bcc_id, 'INBOX', function (error) {
+                                           if (!error) {
+                                               addMailOpened(mail_id, bcc_id, function (error) {
+                                                   cb(error);
+                                               });
+                                           } else {
+                                               cb(error);
+                                           }
+                                       });
+                                   }, function (error) {
+                                       if (!error) {
+                                            callback(null);
+                                       } else {
+                                           callback(error);
+                                       }
+                                   });
+                               } else {
+                                   callback(error);
+                               }
+                           });
+                       } else {
+                           callback(error);
+                       }
+                   });
+               } else {
+                   callback(error);
+               }
+            });
+        } else {
+            callback(error);
         }
     });
 }
@@ -1176,6 +1417,8 @@ exports.addToClass = addToClass;
 exports.changeVisability = changeVisability;
 exports.getVisability = getVisability;
 exports.sendMail = sendMail;
+exports.addConcept = addConcept;
+exports.updateConcept = updateConcept;
 exports.getMails = getMails;
 exports.isMailOpened = isMailOpened;
 exports.inLocation = inLocation;
@@ -1183,6 +1426,7 @@ exports.openMail = openMail;
 exports.changeLocation = changeLocation;
 exports.getUsers = getUsers;
 exports.mailInfo = mailInfo;
+exports.sendConcept = sendConcept;
 
 
 

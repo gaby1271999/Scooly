@@ -52,10 +52,10 @@ function intTypeToString(type) {
     }
 }
 
-function getMonth(day, id, groupName, callback) {
+function getMonth(day, id, className, callback) {
     var days = getDaysInMonth(day.getMonth(), day.getFullYear());
 
-    database.getAgendaItems(id, groupName, function (items) {
+    database.getAgendaItems(id, className, function (items) {
         var itemsList = [];
 
         for (var index in items) {

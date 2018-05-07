@@ -426,6 +426,8 @@
             }
 
             function selectClass(username, selected) {
+                console.log(username)
+
                 var selectedClass = selected.options[selected.selectedIndex].text;
 
                 var formElement = document.getElementById('user_class_form');
@@ -594,7 +596,7 @@
                                 <td><%= users[user].username %></td>
 
                                 <td>
-                                    <select onchange="selectClass('<%= users[user].username %>', this)" id="class-select-<%= user %>" name="class">
+                                    <select onchange="selectClass('<%= for ()users[user].username.replace(/.'/g, '\\\'') %>', this)" id="class-select-<%= user %>" name="class">
                                         <script>
                                             function addOptions() {
                                                 var user = <%- JSON.stringify(users[user]) %>
