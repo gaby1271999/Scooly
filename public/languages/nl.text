@@ -1,26 +1,55 @@
+//login screen
 username: Gebruikersnaam
 password: Wachtwoord
-login: Login
+login: Log in
+
+//home page
 messages: Berichten
-news: news
-schoolschedule: school agenda
+news: Nieuws
+schoolschedule: schoolrooster
 subjects: vakken
-documents: mijn documeten
-home: start
-inbox: postvak in
-concept: in ontwerp
-send: verzonden
-sended: verzonden
-removed: prullemand
+documents: Mijn documenten
+home: Home
+
+//message module
+inbox: Postvak in
+concept: In ontwerp
+send: verstuur
+sended: Verstuurde
+removed: Verwijderde
 goback: Ga terug
-date: datum
-from: van
-previousmonth: Vorige Maand
-lessonschedule: Lessen Rooster
+from: Van
+attachment: Bijlage
+name: Naam
+date: Datum
+sendmail: Verstuur mail
+to: Naar
+title: Titel
+form_size_1: zeer klein
+form_size_2: klein
+form_size_3: Normaal
+form_size_4: Middelmatig
+form_size_5: Groot
+form_size_6: Zeer groot
+form_size_7: maxiaal
+mail_send: stuur
+addtoconcept: Voegtoe aan concepten
+
+//school schedule module
+previousmonth: Vorige maand
+lessonschedule: lesrooster
 nextmonth: Volgende maand
 monday: Maandag
 thuesday: Dinsdag
 wednesday: Woensdag
 thursday: Donderdag
-friday: Vrijdag
-attachment: Bijlage
+friday: Frijdag
+backtomonthschedule: Ga terug naar de maand weergave
+priviousday: Vorige maand
+nextday: Volgende dag
+
+//my profile
+Changeyourpassword: verander uw wachtwoord:
+Oldpassword: oud wachtwoord
+Newpassword: nieuw waachtwoord
+Repeatnewpassword: herhaal nieuw wachtwoord

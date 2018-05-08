@@ -20,13 +20,13 @@
     </select>
 
     <select style="margin-left: 3%; background-color: #00A65A; outline: 0; border: 0;" onchange="changeSize(this[this.selectedIndex].value)">
-        <option value="1">Very small</option>
-        <option value="2">small</option>
-        <option value="3">Normal</option>
-        <option value="4">Medium-large</option>
-        <option value="5">Big</option>
-        <option value="6">Very big</option>
-        <option value="7">Maximum</option>
+        <option value="1"><%= object.form_size_1 %></option>
+        <option value="2"><%= object.form_size_2 %></option>
+        <option value="3"><%= object.form_size_3 %></option>
+        <option value="4"><%= object.form_size_4 %></option>
+        <option value="5"><%= object.form_size_5 %></option>
+        <option value="6"><%= object.form_size_6 %></option>
+        <option value="7"><%= object.form_size_7 %></option>
     </select>
     <input type="button" value="B" onclick="bold()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
     <input type="button" value="I" onclick="italic()" style="outline: 0; border: 0; background-color: #00A65A; margin-left: 3%;">
