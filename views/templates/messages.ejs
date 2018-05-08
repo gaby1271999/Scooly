@@ -113,13 +113,13 @@
                             <a id="menu-item-send" onclick="openSend(this)"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.send %></a>
                         </li>
                         <li class="menu-item">
-                            <a onclick="concept.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/pencil.png"><%= object.concept %></a>
+                            <a id="menu-item-concept" onclick="concept.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/pencil.png"><%= object.concept %></a>
                         </li>
                         <li class="menu-item">
-                            <a onclick="sent.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.sended %></a>
+                            <a id="menu-item-sent" onclick="sent.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/post send.png"><%= object.sended %></a>
                         </li>
                         <li class="menu-item">
-                            <a onclick="removed.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/trash can.png"><%= object.removed %></a>
+                            <a id="menu-item-removed" onclick="removed.toMenuItem(this)"><img class="mail-menu-img" src="/images/icons/trash can.png"><%= object.removed %></a>
                         </li>
                     </ul>
                 </td>
@@ -342,11 +342,32 @@
     }
 
     var inbox = new AddMails('inbox', 'inbox_mails', 'INBOX');
+    var concept = new AddMails('concept_mails', 'concept_mails_inbox', 'CONCEPT');
     var sent = new AddMails('sent_mails', 'sent_mails_inbox', 'SENT');
     var removed = new AddMails('removed_mails', 'removed_mails_inbox', 'TRASH');
-    var concept = new AddMails('concept_mails', 'concept_mails_inbox', 'CONCEPT');
 
     inbox.addMails(inbox, true);
+
+    function toOpenInbox(id) {
+        var object = getInboxObject(id);
+
+        if (object != undefined) {
+            if (object.location == 'INBOX') {
+                inbox.toMenuItem(document.getElementById('menu-item-inbox'));
+                return;
+            } else if (object.location == 'CONCEPT') {
+                console.log('test3')
+                concept.toMenuItem(document.getElementById('menu-item-concept'));
+                return;
+            } else if (object.location == 'SENT') {
+                sent.toMenuItem(document.getElementById('menu-item-sent'));
+                return;
+            } else if (object.location == 'TRASH') {
+                removed.toMenuItem(document.getElementById('menu-item-removed'));
+                return;
+            }
+        }
+    }
 
     function createMail(tableElement, object, elementId) {
         var trElement = document.createElement('tr');
@@ -532,7 +553,8 @@
             document.getElementById('mail_viewer_reply').style.display = (object.location != 'INBOX' ? 'none' : 'initial');
             document.getElementById('mail_viewer_reply').setAttribute('onclick', 'reply(' + object.id + ')');
 
-            document.getElementById('mail_viewer_remove_button').setAttribute('onclick', 'removeMail(' + object.id + ')');
+            console.log(object.location)
+            document.getElementById('mail_viewer_remove_button').setAttribute('onclick', 'removeMail(' + object.id + ', \'' + object.location + '\')');
 
             document.getElementById(parentId).style.display = 'none';
             document.getElementById('mail_viewer').style.display = 'block';
@@ -553,6 +575,8 @@
             clearSendHeader();
 
             setMailMenuSelectedColor(document.getElementById('menu-item-send'));
+
+            id = object.id;
 
             if (object.header.to != undefined) {
                 for (var index in object.header.to) {
@@ -648,6 +672,8 @@
 
             clearSendHeader();
 
+            mailConceptId = object.id;
+
             if (object.header.to != undefined) {
                 for (var index in object.header.to) {
                     addHeaderItem(object.header.to[index], 'mail_send_to', 'to');
@@ -677,10 +703,13 @@
         }
     }
 
-    function removeMail(id) {
+    function removeMail(id, location) {
         $.ajax({
-            url: window.origin + '/json/deletemail/' + id,
-            type: 'GET'
+            url: window.origin + '/json/deletemail/' + id + '&' + location,
+            type: 'GET',
+            success: function () {
+                toOpenInbox(id);
+            }
         });
     }
 
@@ -732,6 +761,8 @@
         setMailMenuSelectedColor(element);
 
         clearSendHeader();
+
+        mailConceptId = undefined;
 
         document.getElementById('mail_send_form_title').value = '';
         document.getElementById('mail_send_content_div').innerHTML = '';
@@ -807,7 +838,7 @@
         conceptSendPost(toNames, ccNames, bccNames, document.getElementById('mail_send_form_title').value, document.getElementById('mail_send_content_div').innerHTML, id);
     }
 
-    function conceptSendPost(id, toNames, ccNames, bccNames, title, body) {
+    function conceptSendPost(toNames, ccNames, bccNames, title, body, id) {
         $.ajax({
             url: window.origin + '/panel/sendconcept' + (id == undefined ? '' : '/' + id),
             type: 'POST',
@@ -822,6 +853,7 @@
     }
 
     var conceptObject = {};
+    var mailConceptId;
 
     function forConcept() {
         if (document.getElementById('mail_send').style.display != 'none') {
@@ -849,6 +881,10 @@
                     }
                 }
 
+                console.log(mailConceptId);
+                if (mailConceptId != undefined) {
+                    conceptObject['id'] = mailConceptId;
+                }
                 conceptObject['to_names'] = toNames;
                 conceptObject['cc_names'] = ccNames;
                 conceptObject['bcc_names'] = bccNames;
@@ -868,7 +904,10 @@
     }
 
     function yesConcept() {
-        conceptSendPost(conceptObject.to_names, conceptObject.cc_names, conceptObject.bcc_names, conceptObject.title, conceptObject.body);
+        console.log(conceptObject);
+        console.log(conceptObject.title);
+
+        conceptSendPost(conceptObject.to_names, conceptObject.cc_names, conceptObject.bcc_names, conceptObject.title, conceptObject.body, conceptObject.id);
 
         closePopup();
     }
