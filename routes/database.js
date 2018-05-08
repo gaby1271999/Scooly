@@ -729,9 +729,9 @@ function getVisability(path, callback) {
 }
 
 function addMailLocation(mail_id, user_id, location, callback) {
-    var sql = "INSERT INTO mail_location(mail_id, user_id, location) VALUES(?, ?, ?);";
+    var sql = "INSERT INTO mail_location(mail_id, user_id, location, old_location) VALUES(?, ?, ?, ?);";
 
-    connection.query(sql, [mail_id, user_id, location], function (error) {
+    connection.query(sql, [mail_id, user_id, location, 0], function (error) {
         callback(error);
     });
 }
@@ -873,11 +873,11 @@ function inLocation(mail_id, user_id, location, callback) {
     connection.query(sql, [mail_id, user_id, location], function (error, results) {
        if (!error) {
            if (results.length > 0) {
-               return callback(true);
+               return callback(null, results);
            }
        }
 
-       callback(false);
+       callback(true);
     });
 }
 
@@ -906,9 +906,9 @@ function openMail(mail_id, user_id, callback) {
 }
 
 function changeLocation(mail_id, user_id, oldLocation, location, callback) {
-    var sql = "UPDATE mail_location SET location=? WHERE mail_id=? AND user_id=? AND location=?;";
+    var sql = "UPDATE mail_location SET location=?, old_location=? WHERE mail_id=? AND user_id=? AND location=?;";
 
-    connection.query(sql, [location, mail_id, user_id, oldLocation], function (error) {
+    connection.query(sql, [location, oldLocation, mail_id, user_id, oldLocation], function (error) {
         callback(error);
     });
 }
@@ -1344,7 +1344,7 @@ function defaultDatabase() {
     var mailToTable = "CREATE TABLE IF NOT EXISTS mail_to(id INT NOT NULL AUTO_INCREMENT, mail_id INT NOT NULL, to_id INT NOT NULL, PRIMARY KEY (`id`));";
     connection.query(mailToTable);
 
-    var mailLocationTable = "CREATE TABLE IF NOT EXISTS mail_location(id INT NOT NULL AUTO_INCREMENT, mail_id INT NOT NULL, user_id INT NOT NULL, location VARCHAR(50) NOT NULL, PRIMARY KEY (`id`));";
+    var mailLocationTable = "CREATE TABLE IF NOT EXISTS mail_location(id INT NOT NULL AUTO_INCREMENT, mail_id INT NOT NULL, user_id INT NOT NULL, location VARCHAR(50) NOT NULL, old_location VARCHAR(50) NOT NULL, PRIMARY KEY (`id`));";
     connection.query(mailLocationTable);
 
     var mailCCTable = "CREATE TABLE IF NOT EXISTS mail_cc(id INT NOT NULL AUTO_INCREMENT, mail_id INT NOT NULL, cc_id INT NOT NULL, PRIMARY KEY (`id`));";

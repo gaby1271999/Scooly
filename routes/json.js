@@ -77,9 +77,9 @@ router.get('/openmail/:mail_id', function (req, res) {
     }
 });
 
-router.get('/deletemail/:mail_id', function (req, res) {
+router.get('/deletemail/:mail_id&:location', function (req, res) {
     if (req.session && req.session.user_id) {
-        database.changeLocation(req.params.mail_id, req.session.user_id, 'INBOX', 'TRASH', function (error) {
+        database.changeLocation(req.params.mail_id, req.session.user_id, req.params.location, 'TRASH', function (error) {
             res.setHeader('Content-type', 'application/json');
             res.send([]);
         });
