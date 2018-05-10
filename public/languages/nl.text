@@ -6,7 +6,7 @@ login: Log in
 //home page
 messages: Berichten
 news: Nieuws
-schoolschedule: schoolrooster
+schoolschedule: schoolagenda
 subjects: vakken
 documents: Mijn documenten
 home: Home
@@ -15,7 +15,7 @@ home: Home
 inbox: Postvak in
 concept: In ontwerp
 send: verstuur
-sended: Verstuurde
+sended: Verzonden
 removed: Verwijderde
 goback: Ga terug
 from: Van
@@ -33,7 +33,7 @@ form_size_5: Groot
 form_size_6: Zeer groot
 form_size_7: maxiaal
 mail_send: stuur
-addtoconcept: Voegtoe aan concepten
+addtoconcept: Voeg toe aan concepten
 
 //school schedule module
 previousmonth: Vorige maand
@@ -43,7 +43,7 @@ monday: Maandag
 thuesday: Dinsdag
 wednesday: Woensdag
 thursday: Donderdag
-friday: Frijdag
+friday: Vrijdag
 backtomonthschedule: Ga terug naar de maand weergave
 priviousday: Vorige maand
 nextday: Volgende dag
