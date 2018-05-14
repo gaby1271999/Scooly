@@ -286,6 +286,10 @@
             }
 
             function closePopup() {
+                if (document.getElementById('loader_window').style.display != 'none') {
+                    return;
+                }
+
                 document.getElementById('background_overlay').style.display = 'none';
 
                 if (document.getElementById('agenda_items_window').style.display != 'none') {
@@ -315,6 +319,8 @@
                     document.getElementById('agenda-edit-item-window').style.display = 'none';
                 } else if (document.getElementById('mail_concept_question_window').style.display != 'none') {
                     document.getElementById('mail_concept_question_window').style.display = 'none';
+                } else if (document.getElementById('mail_attachment_window').style.display != 'none') {
+                    document.getElementById('mail_attachment_window').style.display = 'none';
                 }
             }
         </script>
@@ -527,10 +533,114 @@
             </div>
         </div>
 
+        <div id="loader_window" style="position: fixed; top: calc(50% - 100px); left: calc(50% - 100px); display: none; z-index: 99999;">
+            <div style="height: 200px; width: 200px; position: fixed;">
+                <div id="loader"></div>
+            </div>
+        </div>
+
+        <div id="mail_attachment_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div style="margin: 1% 3% 1% 3%;">
+                    <h3>Attachments</h3>
+
+                    <div style="margin: 5%;">
+                        <p id="mail-upload-progress-text" style="text-align: center">Progress 0%</p>
+                        <div style="width: 100%; height: 10px; border-radius: 5px; border: 2px solid black;">
+                            <div id="mail-upload-progress-bar" style="width: 0; height: 100%; background-color: #0e90d2;"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="showUploadMenu()" style="outline: 0; border: 2px solid black; background-color: #0e90d2; color: white; border-radius: 25px; padding: 5px 15px 5px 15px;">Add attachment</button>
+
+                    <input id="mail-upload-input" onchange="updateMailAttachment(this)" type="file" style="display: none;" multiple="multiple">
+
+                    <ul id="mail-upload-files" style="text-decoration: none;">
+
+                    </ul>
+                </div>
+            </div>
+        </div>
 
         <script>
             if (page.length > 0) {
                 changeModule(page)
+            }
+
+            function showUploadMenu() {
+                $('#mail-upload-input').click();
+            }
+
+            function updateMailAttachment(element) {
+                var files = element.files;
+
+                if (files.length > 0) {
+                    var formData = new FormData();
+
+                    for (var i = 0; i < files.length; i++) {
+                        var file = files[i];
+
+                        formData.append('uploads', file, file.name);
+                    }
+
+                    $.ajax({
+                        url: '/upload',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(data){
+                            for (var index in data) {
+                                var i = mailAttachments.indexOf(data[index]);
+                                if (!(i != -1)) {
+                                    mailAttachments[mailAttachments.length] = data[index];
+
+                                    var liElement = document.createElement('li');
+                                    liElement.setAttribute('style', '');
+                                    liElement.innerHTML = '<a onclick="removeMailAttribute(this)">' + data[index] + '</a>';
+
+                                    document.getElementById('mail-upload-files').appendChild(liElement);
+                                }
+                            }
+                        },
+                        xhr: function() {
+                            var xhr = new XMLHttpRequest();
+
+                            xhr.upload.addEventListener('progress', function(evt) {
+                                if (evt.lengthComputable) {
+                                    var percentComplete = evt.loaded / evt.total;
+                                    percentComplete = parseInt(percentComplete * 100);
+
+                                    document.getElementById('mail-upload-progress-text').innerHTML = 'Progress ' + percentComplete + '%';
+                                    document.getElementById('mail-upload-progress-bar').style.width = percentComplete + '%';
+
+                                    if (percentComplete === 100) {
+                                        document.getElementById('mail-upload-progress-text').innerHTML = 'Done';
+                                    }
+                                }
+                            }, false);
+
+                            return xhr;
+                        }
+                    });
+                }
+            }
+
+            function removeMailAttribute(element) {
+                $.ajax({
+                    url: '/upload/remove/' + encodeURIComponent(element.innerHTML),
+                    type: 'GET',
+                    success: function (data) {
+                        if (data == 'success') {
+                            element.parentNode.parentNode.removeChild(element.parentNode);
+
+                            var i = mailAttachments.indexOf(element.innerHTML);
+                            if (i != -1) {
+                                mailAttachments.splice(i, 1);
+                            }
+                        }
+                    }
+                });
             }
         </script>
     </body>

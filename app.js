@@ -2,7 +2,7 @@ var express = require('express');
 var path = require('path');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
-var upload = require('express-fileupload');
+var fileUpload = require('express-fileupload');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 var database = require('./routes/database');
@@ -31,6 +31,7 @@ var profile = require('./routes/profile');
 var profileSettings = require('./routes/profile_settings');
 var json = require('./routes/json');
 var download = require('./routes/download');
+var up = require('./routes/upload');
 
 
 
@@ -42,9 +43,12 @@ app.set('view engine', 'ejs');
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(upload());
-app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({ limit: '10G' }))
+app.use(fileUpload({
+    limits: { fileSize: 1024 * 1024 * 1024 * 1024 },
+}));
+app.use(logger('dev'));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({secret: 'Trolking1', resave: false,   saveUninitialized: true, cookie: {secure: false, maxAge: 18000000}}))
@@ -79,6 +83,7 @@ app.use('/myprofile', profile);
 app.use('/profile_settings', profileSettings);
 app.use('/json', json);
 app.use('/download', download);
+app.use('/upload', up);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

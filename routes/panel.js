@@ -4,10 +4,12 @@ var router = express.Router();
 var lm = require('./modules/language_module');
 var database = require('./database');
 var permission = require('./permission');
+
 var messageManager = require('./modules/message_module');
 var scheduleManager = require('./modules/schedule_manager');
 var weekPlanning = require('./utils/week_planning.js');
 var classUtils = require('./modules/class_utils');
+var attachments = require('./utils/attachment');
 
 
 /* GET home page. */
@@ -151,24 +153,10 @@ router.post('/addagendaitem', function (req, res) {
     }
 });
 
-function namesToList(names) {
-    var list = [];
-
-    if (names != undefined) {
-        if (names.constructor === Array) {
-            list = names;
-        } else {
-            list[list.length] = names;
-        }
-    }
-
-    return list;
-}
-
 function getMailIdsConverter(to_names, cc_names, bcc_names, callback) {
-    var to = namesToList(to_names);
-    var cc = namesToList(cc_names);
-    var bcc = namesToList(bcc_names);
+    var to = JSON.parse(to_names);
+    var cc = JSON.parse(cc_names);
+    var bcc = JSON.parse(bcc_names);
 
     async.series([
         function (callback) {
@@ -227,31 +215,30 @@ router.post('/sendmail/:id?', function (req, res) {
     if (req.session && req.session.user_id) {
         getMailIdsConverter(req.body.to, req.body.cc, req.body.bcc, function (res1, res2, res3) {
             if (req.params.id != undefined) {
-                database.sendConcept(req.params.id, req.session.user_id, res1, res2, res3, req.body.title, req.body.content, function (error) {
-                    console.log(error);
+                database.sendConcept(req.params.id, req.session.user_id, res1, res2, res3, req.body.title, req.body.body, function (error) {
                     res.redirect('/panel');
                 });
             } else {
-                getMailIdsConverter(req.body.to, req.body.cc, req.body.bcc, function (res1, res2, res3) {
-                    database.sendMail(req.session.user_id, res1, res2, res3, req.body.title, req.body.content, function (error) {
-                        res.redirect('/panel');
-                    });
+                database.sendMail(req.session.user_id, res1, res2, res3, req.body.title, req.body.body, function (error) {
+                    res.redirect('/panel');
                 });
             }
         });
     }
 });
 
-router.post('/sendconcept/:id?', function (req, res) {
+router.post('/sendconcept/:mail_id?', function (req, res) {
     if (req.session && req.session.user_id) {
-        if (req.params.id != undefined) {
-            getMailIdsConverter(JSON.parse(req.body.to), JSON.parse(req.body.cc), JSON.parse(req.body.bcc), function (res1, res2, res3) {
-                database.updateConcept(req.params.id, req.session.user_id, res1, res2, res3, req.body.title, req.body.body, function (error) {
-                    res.redirect('/panel');
+        if (req.params.mail_id != undefined) {
+            getMailIdsConverter(req.body.to, req.body.cc, req.body.bcc, function (res1, res2, res3) {
+                database.updateConcept(req.params.mail_id, req.session.user_id, res1, res2, res3, req.body.title, req.body.body, function (error) {
+                    attachments.updateAttachment(req.params.mail_id, req.session.user_id, function () {
+                        res.redirect('/panel');
+                    });
                 });
             });
         } else {
-            getMailIdsConverter(JSON.parse(req.body.to), JSON.parse(req.body.cc), JSON.parse(req.body.bcc), function (res1, res2, res3) {
+            getMailIdsConverter(req.body.to, req.body.cc, req.body.bcc, function (res1, res2, res3) {
                 database.addConcept(req.session.user_id, res1, res2, res3, req.body.title, req.body.body, function (error) {
                     res.redirect('/panel');
                 });

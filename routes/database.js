@@ -1,6 +1,7 @@
 var mysql = require('mysql');
 var bcrypt = require('bcryptjs');
 var async = require('async');
+var fs = require('fs');
 
 var connection;
 
@@ -744,58 +745,96 @@ function addMailOpened(mail_id, user_id, callback) {
     });
 }
 
+var tempDirection = __dirname.replace("routes", "private/mails/temp");
+var mailDirection = __dirname.replace("routes", "private/mails/mails");
+
 function sendMail(user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
     var sqlMail = "INSERT INTO mails(from_id, title, body, date) VALUES(?, ?, ?, NOW());";
     connection.query(sqlMail, [user_id, title, body], function (error, result) {
         if (!error) {
             if (result.insertId != undefined) {
-                addMailLocation(result.insertId, user_id, 'SENT', function (error) {
-                    if (!error) {
-                        async.each(to_ids, function (to_id, cb) {
-                            var sqlTO = "INSERT INTO mail_to(mail_id, to_id) VALUES(?, ?);";
-                            connection.query(sqlTO, [result.insertId, to_id], function (error) {
-                                if (!error) {
-                                    addMailLocation(result.insertId, to_id, 'INBOX', function (error) {
-                                        if (!error) {
-                                            addMailOpened(result.insertId, to_id, function (error) {
-                                                cb(error);
-                                            });
-                                        } else {
-                                            cb(error);
-                                        }
-                                    });
-                                } else {
-                                    cb(error);
-                                }
+                async.series([
+                    function (callb) {
+                        var path = tempDirection + '/' + user_id;
+
+                        if (fs.existsSync(path)) {
+                            fs.readdir(path, function (error, files) {
+                               if (!error) {
+                                   if (files.length > 0) {
+                                       var newPath = mailDirection + '/' + user_id;
+
+                                       if (!fs.existsSync(newPath)) {
+                                           fs.mkdirSync(newPath);
+                                       }
+
+                                       newPath += '/' + result.insertId;
+
+                                       if (!fs.existsSync(newPath)) {
+                                           fs.mkdirSync(newPath);
+                                       }
+
+                                       async.each(files, function (file, cb) {
+
+                                           fs.rename(path + '/' + file, newPath + '/' + file, function (error) {
+                                               cb(error);
+                                           });
+                                       }, function (error) {
+                                           if (!error) {
+                                               var sqlAttachment = "INSERT INTO mail_attachment(mail_id, path) VALUES(?, ?);";
+
+                                               connection.query(sqlAttachment, [result.insertId, newPath], function (error) {
+
+                                                   if (!error) {
+                                                       callb(null);
+                                                   } else {
+                                                       callb('error');
+                                                   }
+                                               });
+                                           } else {
+                                               callb('error');
+                                           }
+                                       });
+                                   } else {
+                                       callb('error');
+                                   }
+                               } else {
+                                   callb('error');
+                               }
                             });
-                        }, function (error) {
+                        } else {
+                            callb('error');
+                        }
+                    },
+
+                    function (c) {
+                        addMailLocation(result.insertId, user_id, 'SENT', function (error) {
                             if (!error) {
-                                async.each(cc_ids, function (cc_id, cb) {
-                                    var sqlCC = "INSERT INTO mail_cc(mail_id, cc_id) VALUES(?, ?);";
-                                    connection.query(sqlCC, [result.insertId, cc_id], function (error) {
+                                async.each(to_ids, function (to_id, cb) {
+                                    var sqlTO = "INSERT INTO mail_to(mail_id, to_id) VALUES(?, ?);";
+                                    connection.query(sqlTO, [result.insertId, to_id], function (error) {
                                         if (!error) {
-                                            addMailLocation(result.insertId, cc_id, 'INBOX', function (error) {
+                                            addMailLocation(result.insertId, to_id, 'INBOX', function (error) {
                                                 if (!error) {
-                                                    addMailOpened(result.insertId, cc_id, function (error) {
+                                                    addMailOpened(result.insertId, to_id, function (error) {
                                                         cb(error);
                                                     });
                                                 } else {
                                                     cb(error);
                                                 }
-                                            })
+                                            });
                                         } else {
                                             cb(error);
                                         }
                                     });
                                 }, function (error) {
                                     if (!error) {
-                                        async.each(bcc_ids, function (bcc_id, cb) {
-                                            var sqlBCC = "INSERT INTO mail_bcc(mail_id, bcc_id) VALUES(?, ?);";
-                                            connection.query(sqlBCC, [result.insertId, bcc_id], function (error) {
+                                        async.each(cc_ids, function (cc_id, cb) {
+                                            var sqlCC = "INSERT INTO mail_cc(mail_id, cc_id) VALUES(?, ?);";
+                                            connection.query(sqlCC, [result.insertId, cc_id], function (error) {
                                                 if (!error) {
-                                                    addMailLocation(result.insertId, bcc_id, 'INBOX', function (error) {
+                                                    addMailLocation(result.insertId, cc_id, 'INBOX', function (error) {
                                                         if (!error) {
-                                                            addMailOpened(result.insertId, bcc_id, function (error) {
+                                                            addMailOpened(result.insertId, cc_id, function (error) {
                                                                 cb(error);
                                                             });
                                                         } else {
@@ -808,17 +847,44 @@ function sendMail(user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
                                             });
                                         }, function (error) {
                                             if (!error) {
-                                                callback(null);
+                                                async.each(bcc_ids, function (bcc_id, cb) {
+                                                    var sqlBCC = "INSERT INTO mail_bcc(mail_id, bcc_id) VALUES(?, ?);";
+                                                    connection.query(sqlBCC, [result.insertId, bcc_id], function (error) {
+                                                        if (!error) {
+                                                            addMailLocation(result.insertId, bcc_id, 'INBOX', function (error) {
+                                                                if (!error) {
+                                                                    addMailOpened(result.insertId, bcc_id, function (error) {
+                                                                        cb(error);
+                                                                    });
+                                                                } else {
+                                                                    cb(error);
+                                                                }
+                                                            })
+                                                        } else {
+                                                            cb(error);
+                                                        }
+                                                    });
+                                                }, function (error) {
+                                                    if (!error) {
+                                                        c(null);
+                                                    }
+                                                });
+                                            } else {
+                                                c(error);
                                             }
                                         });
                                     } else {
-                                        callback(error);
+                                        c(error);
                                     }
                                 });
                             } else {
-                                callback(error);
+                                c(error);
                             }
                         });
+                    }
+                ], function (error) {
+                    if (!error) {
+                        callback(null);
                     } else {
                         callback(error);
                     }
@@ -830,6 +896,20 @@ function sendMail(user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
             callback(error);
         }
     });
+}
+
+function getMailFrom(mail_id, callback) {
+    var sql = "SELECT * FROM mails WHERE id=?;";
+
+    connection.query(sql, [mail_id], function (error, results) {
+        if (!error) {
+            if (results.length == 1) {
+                return callback(null, results[0].from_id);
+            }
+        }
+
+        callback('error');
+    })
 }
 
 function getMails(callback) {
@@ -1098,40 +1178,103 @@ function addConcept(user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
     connection.query(sqlMail, [user_id, title, body], function (error, result) {
         if (!error) {
             if (result.insertId != undefined) {
-                addMailLocation(result.insertId, user_id, 'CONCEPT', function (error) {
-                    if (!error) {
-                        async.each(to_ids, function (to_id, cb) {
-                            var sqlTO = "INSERT INTO mail_to(mail_id, to_id) VALUES(?, ?);";
-                            connection.query(sqlTO, [result.insertId, to_id], function (error) {
-                                cb(error);
-                            });
-                        }, function (error) {
-                            if (!error) {
-                                async.each(cc_ids, function (cc_id, cb) {
-                                    var sqlCC = "INSERT INTO mail_cc(mail_id, cc_id) VALUES(?, ?);";
-                                    connection.query(sqlCC, [result.insertId, cc_id], function (error) {
-                                        cb(error);
-                                    });
-                                }, function (error) {
-                                    if (!error) {
-                                        async.each(bcc_ids, function (bcc_id, cb) {
-                                            var sqlBCC = "INSERT INTO mail_bcc(mail_id, bcc_id) VALUES(?, ?);";
-                                            connection.query(sqlBCC, [result.insertId, bcc_id], function (error) {
+                async.series([
+                    function (callb) {
+                        var path = tempDirection + '/' + user_id;
+
+                        if (fs.existsSync(path)) {
+                            fs.readdir(path, function (error, files) {
+                                if (!error) {
+                                    if (files.length > 0) {
+                                        var newPath = mailDirection + '/' + user_id;
+
+                                        if (!fs.existsSync(newPath)) {
+                                            fs.mkdirSync(newPath);
+                                        }
+
+                                        newPath += '/' + result.insertId;
+
+                                        if (!fs.existsSync(newPath)) {
+                                            fs.mkdirSync(newPath);
+                                        }
+
+                                        async.each(files, function (file, cb) {
+
+                                            fs.rename(path + '/' + file, newPath + '/' + file, function (error) {
                                                 cb(error);
                                             });
                                         }, function (error) {
                                             if (!error) {
-                                                callback(null);
+                                                var sqlAttachment = "INSERT INTO mail_attachment(mail_id, path) VALUES(?, ?);";
+                                                connection.query(sqlAttachment, [result.insertId, newPath], function (error) {
+
+                                                    if (!error) {
+                                                        callb(null);
+                                                    } else {
+                                                        callb('error');
+                                                    }
+                                                });
+                                            } else {
+                                                callb('error');
                                             }
                                         });
                                     } else {
-                                        callback(error);
+                                        callb('error');
+                                    }
+                                } else {
+                                    callb('error');
+                                }
+                            });
+                        } else {
+                            callb('error');
+                        }
+                    },
+
+                    function (callb) {
+                        addMailLocation(result.insertId, user_id, 'CONCEPT', function (error) {
+                            if (!error) {
+                                async.each(to_ids, function (to_id, cb) {
+                                    var sqlTO = "INSERT INTO mail_to(mail_id, to_id) VALUES(?, ?);";
+                                    connection.query(sqlTO, [result.insertId, to_id], function (error) {
+                                        cb(error);
+                                    });
+                                }, function (error) {
+                                    if (!error) {
+                                        async.each(cc_ids, function (cc_id, cb) {
+                                            var sqlCC = "INSERT INTO mail_cc(mail_id, cc_id) VALUES(?, ?);";
+                                            connection.query(sqlCC, [result.insertId, cc_id], function (error) {
+                                                cb(error);
+                                            });
+                                        }, function (error) {
+                                            if (!error) {
+                                                async.each(bcc_ids, function (bcc_id, cb) {
+                                                    var sqlBCC = "INSERT INTO mail_bcc(mail_id, bcc_id) VALUES(?, ?);";
+                                                    connection.query(sqlBCC, [result.insertId, bcc_id], function (error) {
+                                                        cb(error);
+                                                    });
+                                                }, function (error) {
+                                                    if (!error) {
+                                                        callb(null);
+                                                    }
+                                                });
+                                            } else {
+                                                callb(error);
+                                            }
+                                        });
+                                    } else {
+                                        callb(error);
                                     }
                                 });
                             } else {
-                                callback(error);
+                                callb(error);
                             }
                         });
+                    }
+                ], function (error) {
+                    console.log(error);
+
+                    if (!error) {
+                        callback(null);
                     } else {
                         callback(error);
                     }
@@ -1312,6 +1455,60 @@ function sendConcept(mail_id, user_id, to_ids, cc_ids, bcc_ids, title, body, cal
     });
 }
 
+function deleteMail(mail_id, user_id, callback) {
+    var sql = "SELECT * FROM mail_location WHERE mail_id=? AND user_id=? AND location=?;";
+
+    connection.query(sql, [mail_id, user_id, 'TRASH'], function (error, results) {
+       if (!error) {
+           if (results.length == 1) {
+               var sqlDelete = "DELETE FROM mail_location WHERE mail_id=? AND user_id=? AND location=?;";
+
+               connection.query(sqlDelete, [mail_id, user_id, 'TRASH'], function (error) {
+                   return callback(error);
+               });
+           } else {
+               callback('ERROR');
+           }
+       } else {
+           callback(error);
+       }
+    });
+}
+
+function getAttachmentPath(mail_id, callback) {
+    var sql = "SELECT * FROM mail_attachment WHERE mail_id=?;";
+
+    connection.query(sql, [mail_id], function (error, results) {
+        if (!error) {
+            if (results.length == 1) {
+                return callback(null, results[0].path);
+            }
+        }
+
+        callback('error');
+    });
+}
+
+function addAttachment(mail_id, path, callback) {
+    var sql = "INSERT INTO mail_attachment(mail_id, path) VALUES(?, ?);";
+
+    connection.query(sql, [mail_id, path], function (error) {
+        callback(error);
+    });
+}
+
+function hasAttachment(mail_id, callback) {
+    var sql = "SELECT * FROM mail_attachment WHERE mail_id=?;";
+
+    connection.query(sql, [mail_id], function (error, results) {
+        if (!error) {
+            return callback(null, results.length == 1 ? true : false);
+        }
+
+        callback('error');
+    });
+}
+
 function defaultDatabase() {
     var userTable = "CREATE TABLE IF NOT EXISTS users(id INT NOT NULL AUTO_INCREMENT, username VARCHAR(30) NOT NULL, password VARCHAR(60) NOT NULL, PRIMARY KEY (`id`));";
     connection.query(userTable);
@@ -1425,7 +1622,12 @@ exports.inLocation = inLocation;
 exports.openMail = openMail;
 exports.changeLocation = changeLocation;
 exports.getUsers = getUsers;
+exports.getMailFrom = getMailFrom;
 exports.mailInfo = mailInfo;
+exports.deleteMail = deleteMail;
+exports.hasAttachment = hasAttachment;
+exports.getAttachmentPath = getAttachmentPath;
+exports.addAttachment = addAttachment;
 exports.sendConcept = sendConcept;
 
 

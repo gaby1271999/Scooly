@@ -23,7 +23,8 @@
     "yaml-config": "latest",
     "exceljs": "latest",
     "jimp": "latest",
-    "bcryptjs": "latest"
-    "busboy": "latest"
+    "bcryptjs": "latest",
+    "busboy": "latest",
+    "adm-zip": "latest"
   }
 }

@@ -7,7 +7,6 @@ function getMailsObject(id, from, to, location, callback) {
         callback([]);
     } else {
         database.getMails(function (mails) {
-
             var list = [];
 
             async.each(mails, function (mail, callb) {
@@ -20,14 +19,21 @@ function getMailsObject(id, from, to, location, callback) {
                                         if (!error) {
                                             database.isMailOpened(mail.id, id, function (error, opened) {
                                                 if (!error) {
-                                                    delete mail['from_id'];
-                                                    mail['from'] = username;
-                                                    mail['header'] = header;
-                                                    mail['opened'] = opened;
-                                                    mail['location'] = locObject.location;
+                                                    database.hasAttachment(mail.id, function (error, result) {
+                                                       if (!error) {
+                                                           delete mail['from_id'];
+                                                           mail['from'] = username;
+                                                           mail['header'] = header;
+                                                           mail['opened'] = opened;
+                                                           mail['location'] = locObject.location;
+                                                           mail['attachment'] = result;
 
-                                                    list[list.length] = mail;
-                                                    cb();
+                                                           list[list.length] = mail;
+                                                           cb();
+                                                       } else {
+                                                           cb();
+                                                       }
+                                                    });
                                                 } else {
                                                     cb();
                                                 }
