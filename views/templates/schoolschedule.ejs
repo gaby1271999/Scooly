@@ -674,7 +674,7 @@
             </div>
 
             <div id="day-agenda-menu" class="agenda_menu" style="display: none;">
-                <div><a onclick="backToMonth()">Back to month schedule</a></div>
+                <div><a onclick="backToMonth()"><%= object.backtomonthschedule%></a></div>
 
                 <div id="previous-day-menu-item">
                     <script>
@@ -682,7 +682,7 @@
                             var aElement = document.createElement('a');
 
                             aElement.setAttribute('onclick', 'openPreviousDay()');
-                            aElement.innerHTML = 'privious day';
+                            aElement.innerHTML = '<%= object.priviousday%>';
 
                             document.getElementById('previous-day-menu-item').appendChild(aElement);
                         }
@@ -726,7 +726,7 @@
                             var aElement = document.createElement('a');
 
                             aElement.setAttribute('onclick', 'openNextDay()');
-                            aElement.innerHTML = 'next day';
+                            aElement.innerHTML = '<%= object.nextday%>';
 
                             document.getElementById('next-day-menu-item').appendChild(aElement);
                         }

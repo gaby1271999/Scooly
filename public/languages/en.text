@@ -1,20 +1,41 @@
+//login screen
 username: Username
 password: Password
 login: Login
+
+//home page
 messages: Messages
 news: News
 schoolschedule: School schedule
 subjects: Subjects
 documents: My Documents
 home: Home
+
+//message module
 inbox: Inbox
 concept: Concept
 send: Send
 sended: Sended
 removed: Removed
 goback: Go back
-date: Date
 from: From
+attachment: Attachment
+name: Name
+date: Date
+sendmail: Send Mail
+to: TO
+title: Title
+form_size_1: Very small
+form_size_2: Small
+form_size_3: Normal
+form_size_4: medium-large
+form_size_5: Big
+form_size_6: Very big
+form_size_7: Maximum
+mail_send: Send
+addtoconcept: Add To Concept
+
+//school schedule module
 previousmonth: Previous Month
 lessonschedule: lesson Schedule
 nextmonth: Next Month
@@ -23,4 +44,12 @@ thuesday: Thuesday
 wednesday: Wednesday
 thursday: Thursday
 friday: Friday
-attachment: Attachment
+backtomonthschedule: Back to month schedule
+priviousday: Privious day
+nextday: Next day
+
+//my profile
+Changeyourpassword: Change your password:
+Oldpassword: Old password
+Newpassword: New password
+Repeatnewpassword: Repeat new password

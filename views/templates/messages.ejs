@@ -130,8 +130,8 @@
                             <div class="inbox_scroll" style="height: 100%; background-color: #00DF79; max-height: 400px; overflow-y: scroll;">
                                 <table id="inbox_mails" style="width: 100%; border: 0;">
                                     <tr style="border: 0; border-bottom: 1px solid black; background-color: #00A65A;">
-                                        <th style="width: 80%; border: 0; padding-left: 5%; border-right: 1px solid black;">Name</th>
-                                        <th style="border: 0; text-align: center;">Date</th>
+                                        <th style="width: 80%; border: 0; padding-left: 5%; border-right: 1px solid black;"><%= object.name %></th>
+                                        <th style="border: 0; text-align: center;"><%= object.date %></th>
                                     </tr>
                                 </table>
                             </div>
@@ -166,7 +166,7 @@
 
                         <div id="mail_send" style="display: none;">
                             <div id="mail_send_title">
-                                <p>Send mail</p>
+                                <p><%= object.sendmail %></p>
                             </div>
 
                             <div id="mail_send_body">
@@ -175,7 +175,7 @@
                                         <div style="display: table; width: 100%;">
                                             <div class="autocomplete" style="display: table-cell;">
                                                 <div id="mail_send_to" style="display: flex;">
-                                                   <textarea id="mail_send_to" rows="1" maxlength="50" style="flex: 1; padding: 5px; resize: none; border: 0; outline: 0; background: 0;" oninput="getAutoComplete(this, 'mail_send_to', 'mail_send_to_autocomplete', 'to')" placeholder="To"></textarea>
+                                                   <textarea id="mail_send_to" rows="1" maxlength="50" style="flex: 1; padding: 5px; resize: none; border: 0; outline: 0; background: 0;" oninput="getAutoComplete(this, 'mail_send_to', 'mail_send_to_autocomplete', 'to')" placeholder="<%= object.to %>"></textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -213,8 +213,8 @@
 
                                     <% include utils/editor.ejs %>
 
-                                    <input type="submit" id="mail_send_submit" onclick="sendMailForm()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="Send">
-                                    <input type="button" id="mail_send_concept" onclick="sendConcept()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="Add to concept">
+                                    <input type="submit" id="mail_send_submit" onclick="sendMailForm()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="<%= object.mail_send %>">
+                                    <input type="button" id="mail_send_concept" onclick="sendConcept()" style="margin-top: 1%; border: none; outline: 0; background-color: #00A65A; padding: 1%; width: 50%; text-align: center;" value="<%= object.addtoconcept %>">
 
                                     <div id="mail_input_hidden" style="display: none"></div>
                                 </div>
@@ -915,7 +915,7 @@
                 body: body
             },
             success: function () {
-                
+
             }
         });
     }
