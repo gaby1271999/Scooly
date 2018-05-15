@@ -43,14 +43,14 @@ function updateAttachment(mail_id, user_id, callback) {
                                
                                function (replace, files, cb) {
                                    if (replace) {
-                                       var newDir = mailDirection + '/' + mail_id + '/' + from_id;
+                                       var newDir = mailDirection + '/' + from_id + '/' + mail_id;
 
                                        if (!fs.existsSync(mailDirection + '/' + mail_id)) {
                                            fs.mkdirSync(mailDirection + '/' + mail_id);
                                        }
                                        
-                                       if (!fs.existsSync(mailDirection + '/' + mail_id + '/' + from_id)) {
-                                           fs.mkdirSync(mailDirection + '/' + mail_id + '/' + from_id);
+                                       if (!fs.existsSync(mailDirection + '/' + from_id + '/' + mail_id)) {
+                                           fs.mkdirSync(mailDirection + '/' + from_id + '/' + mail_id);
                                        }
 
                                        async.each(files, function (file, cb) {
@@ -73,10 +73,14 @@ function updateAttachment(mail_id, user_id, callback) {
                            if (fs.existsSync(path)) {
                                fs.readdir(path, function (error, files) {
                                    if (!error) {
-                                       var newDir = mailDirection + '/' + mail_id + '/' + from_id;
+                                       var newDir = mailDirection + '/' + from_id + '/' + mail_id;
 
-                                       if (!fs.existsSync(newDir)) {
-                                           fs.mkdirSync(newDir);
+                                       if (!fs.existsSync(mailDirection + '/' + from_id)) {
+                                           fs.mkdirSync(mailDirection + '/' + from_id);
+                                       }
+
+                                       if (!fs.existsSync(mailDirection + '/' + from_id + '/' + mail_id)) {
+                                           fs.mkdirSync(mailDirection + '/' + from_id + '/' + mail_id);
                                        }
 
                                        async.each(files, function (file, cb) {

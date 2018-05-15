@@ -1219,7 +1219,7 @@ function addConcept(user_id, to_ids, cc_ids, bcc_ids, title, body, callback) {
                                             }
                                         });
                                     } else {
-                                        callb('error');
+                                        callb(null);
                                     }
                                 } else {
                                     callb('error');

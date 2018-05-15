@@ -303,10 +303,6 @@
             }
 
             $.getJSON(window.origin + '/json/getmails/' + obj.mailFrom + '&' + (10+obj.mailFrom) + '&' + obj.location, function (data) {
-                console.log(
-                    data
-                )
-
                 for (var i in data) {
                     var object = data[i];
 
@@ -329,8 +325,12 @@
             obj.mailFrom += 10;
         }
 
-        this.toMenuItem = function (element) {
-            forConcept();
+        this.toMenuItem = function (element, saveConcept) {
+            if (saveConcept == undefined) {
+                if (!saveConcept) {
+                    forConcept();
+                }
+            }
 
             closeOpenMC();
 
@@ -583,11 +583,9 @@
                 document.getElementById('mail_viewer_edit_concept').setAttribute('onclick', 'openConcept(' + object.id + ')');
             }
 
-            console.log((object.location != 'INBOX' ? 'none' : 'initial'))
             document.getElementById('mail_viewer_reply').style.display = (object.location != 'INBOX' ? 'none' : 'initial');
             document.getElementById('mail_viewer_reply').setAttribute('onclick', 'reply(' + object.id + ')');
 
-            console.log(object.location)
             document.getElementById('mail_viewer_remove_button').setAttribute('onclick', 'removeMail(' + object.id + ', \'' + object.location + '\')');
 
             document.getElementById(parentId).style.display = 'none';
@@ -604,8 +602,6 @@
         var object = getInboxObject(id);
 
         if (object != undefined) {
-            newMail = true;
-
             closeOpenMC();
 
             clearSendHeader();
@@ -704,13 +700,13 @@
         var object = getInboxObject(id);
 
         if (object != undefined) {
-            newMail = false;
-
             closeOpenMC();
 
             clearSendHeader();
 
             mailConceptId = object.id;
+
+            resetAttachments();
 
             $.ajax({
                 url: window.origin + '/upload/concept/' + id,
@@ -823,11 +819,11 @@
         document.getElementById('mail_send_content_div').innerHTML = '';
 
         document.getElementById('mail_send').style.display = 'initial';
+
+        resetAttachments();
     }
 
     function sendMailForm(id) {
-        newMail = true;
-
         var inputTitleElement = document.getElementById('mail_send_form_title');
         var mailBodyElement = document.getElementById('mail_send_content_div');
 
@@ -900,10 +896,12 @@
         var ccNames = list[1];
         var bccNames = list[2];
 
-        conceptSendPost(toNames, ccNames, bccNames, document.getElementById('mail_send_form_title').value, document.getElementById('mail_send_content_div').innerHTML, id);
+        conceptSendPost(toNames, ccNames, bccNames, document.getElementById('mail_send_form_title').value, document.getElementById('mail_send_content_div').innerHTML, id, function () {
+            concept.toMenuItem(document.getElementById('menu-item-inbox'), true);
+        });
     }
 
-    function conceptSendPost(toNames, ccNames, bccNames, title, body, id) {
+    function conceptSendPost(toNames, ccNames, bccNames, title, body, id, callback) {
         $.ajax({
             url: window.origin + '/panel/sendconcept' + (id == undefined ? '' : '/' + id),
             type: 'POST',
@@ -915,39 +913,36 @@
                 body: body
             },
             success: function () {
-
+                callback();
             }
         });
     }
 
     var conceptObject = {};
-    var newMail = true;
     var mailConceptId;
 
     function forConcept() {
         if (document.getElementById('mail_send').style.display != 'none') {
             if (document.getElementById('mail_send_form_title').value != '') {
-                if (!newMail) {
-                    conceptObject = {};
+                conceptObject = {};
 
-                    var list = getMailHeaderArray();
+                var list = getMailHeaderArray();
 
-                    var toNames = list[0];
-                    var ccNames = list[1];
-                    var bccNames = list[2];
+                var toNames = list[0];
+                var ccNames = list[1];
+                var bccNames = list[2];
 
-                    if (mailConceptId != undefined) {
-                        conceptObject['id'] = mailConceptId;
-                    }
-                    conceptObject['to_names'] = toNames;
-                    conceptObject['cc_names'] = ccNames;
-                    conceptObject['bcc_names'] = bccNames;
-                    conceptObject['title'] = document.getElementById('mail_send_form_title').value;
-                    conceptObject['body'] = document.getElementById('mail_send_content_div').innerHTML;
-
-                    document.getElementById('mail_concept_question_window').style.display = 'initial';
-                    document.getElementById('background_overlay').style.display = 'initial';
+                if (mailConceptId != undefined) {
+                    conceptObject['id'] = mailConceptId;
                 }
+                conceptObject['to_names'] = toNames;
+                conceptObject['cc_names'] = ccNames;
+                conceptObject['bcc_names'] = bccNames;
+                conceptObject['title'] = document.getElementById('mail_send_form_title').value;
+                conceptObject['body'] = document.getElementById('mail_send_content_div').innerHTML;
+
+                document.getElementById('mail_concept_question_window').style.display = 'initial';
+                document.getElementById('background_overlay').style.display = 'initial';
             }
         }
     }
@@ -958,20 +953,54 @@
         closePopup();
 
         $.ajax({
-            url: window.origin + '/upload/clear',
-            type: 'GET'
+            url: window.origin + '/upload/save/' + conceptObject.id,
+            type: 'GET',
+            success: function () {
+                $.ajax({
+                    url: window.origin + '/upload/clear',
+                    type: 'GET'
+                });
+            }
         });
     }
 
     function yesConcept() {
-        conceptSendPost(conceptObject.to_names, conceptObject.cc_names, conceptObject.bcc_names, conceptObject.title, conceptObject.body, conceptObject.id);
+        $.ajax({
+            url: window.origin + '/upload/save/' + conceptObject.id,
+            type: 'GET',
+            success: function () {
+                $.ajax({
+                    url: window.origin + '/upload/clear',
+                    type: 'GET',
+                    success: function () {
+                        conceptSendPost(conceptObject.to_names, conceptObject.cc_names, conceptObject.bcc_names, conceptObject.title, conceptObject.body, conceptObject.id);
 
-        closePopup();
+                        closePopup();
+                    }
+                });
+            }
+        });
     }
 
     var mailAttachments = [];
     function addAtachment() {
         document.getElementById('mail_attachment_window').style.display = 'initial';
         document.getElementById('background_overlay').style.display = 'initial';
+    }
+
+    function resetAttachments() {
+        mailAttachments = [];
+
+        var divElement = document.getElementById('mail-upload-files');
+
+        while (divElement.firstChild) {
+            divElement.removeChild(divElement.firstChild);
+        }
+
+        var pElement = document.getElementById('mail-upload-progress-text');
+        pElement.innerHTML = 'Progress 0%';
+
+        var progressBarElement = document.getElementById('mail-upload-progress-bar');
+        progressBarElement.style.width = '0';
     }
 </script>

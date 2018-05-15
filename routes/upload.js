@@ -67,7 +67,7 @@ router.get('/download/:mail_id', function(req, res) {
                                         var zip = new AdmZip();
 
                                         for (var index in files) {
-                                            zip.addLocalFile(path += '/' + files[index]);
+                                            zip.addLocalFile(path + '/' + files[index]);
                                         }
 
                                         zip.writeZip(zipsDirection + '/' + req.params.mail_id + '.zip');
@@ -158,6 +158,54 @@ router.get('/concept/:mail_id', function(req, res) {
            } else {
                res.end();
            }
+        });
+    }
+});
+
+router.get('/save/:mail_id', function(req, res) {
+    if (req.session && req.session.user_id) {
+        database.getMailFrom(req.params.mail_id, function (error, from_id) {
+            if (!error) {
+                if (from_id == req.session.user_id) {
+                    var path = direction + '/' + from_id;
+
+                    if (fs.existsSync(path)) {
+                        fs.readdir(path, function (error, files) {
+                            if (!error) {
+                                if (files.length > 0) {
+                                    var newDir = mailDirection + '/' + from_id + '/' + req.params.mail_id;
+
+                                    if (!fs.existsSync(mailDirection + '/' + from_id)) {
+                                        fs.mkdirSync(mailDirection + '/' + from_id);
+                                    }
+
+                                    if (!fs.existsSync(mailDirection + '/' + from_id + '/' + req.params.mail_id)) {
+                                        fs.mkdirSync(mailDirection + '/' + from_id + '/' + req.params.mail_id);
+                                    }
+
+                                    async.each(files, function (file, cb) {
+                                        fs.rename(path + '/' + file, newDir + '/' + file, function (error) {
+                                            cb();
+                                        });
+                                    }, function () {
+                                        res.end();
+                                    });
+                                } else {
+                                    res.end();
+                                }
+                            } else {
+                                res.end();
+                            }
+                        });
+                    } else {
+                        res.end();
+                    }
+                } else {
+                    res.end();
+                }
+            } else {
+                res.end();
+            }
         });
     }
 });

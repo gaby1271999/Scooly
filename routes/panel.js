@@ -240,6 +240,7 @@ router.post('/sendconcept/:mail_id?', function (req, res) {
         } else {
             getMailIdsConverter(req.body.to, req.body.cc, req.body.bcc, function (res1, res2, res3) {
                 database.addConcept(req.session.user_id, res1, res2, res3, req.body.title, req.body.body, function (error) {
+                    console.log('mail error: ' + error)
                     res.redirect('/panel');
                 });
             });
