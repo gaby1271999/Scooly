@@ -814,11 +814,18 @@
         clearSendHeader();
 
         mailConceptId = undefined;
+        document.getElementById('mail_send_concept').setAttribute('onclick', 'sendConcept()');
 
         document.getElementById('mail_send_form_title').value = '';
         document.getElementById('mail_send_content_div').innerHTML = '';
 
-        document.getElementById('mail_send').style.display = 'initial';
+        $.ajax({
+            url: window.origin + '/upload/clear',
+            type: 'GET',
+            success: function () {
+                document.getElementById('mail_send').style.display = 'initial';
+            }
+        });
 
         resetAttachments();
     }
@@ -847,7 +854,7 @@
                 body: mailBodyElement.innerHTML
             },
             success: function () {
-                inbox.toMenuItem(document.getElementById('menu-item-inbox'));
+                inbox.toMenuItem(document.getElementById('menu-item-inbox'), true);
 
                 document.getElementById('background_overlay').style.display = 'none';
                 document.getElementById('loader_window').style.display = 'none';
