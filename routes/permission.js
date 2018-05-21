@@ -1,4 +1,5 @@
 var config = require('yaml-config');
+var async = require('async');
 var database = require('./database');
 
 
@@ -184,21 +185,30 @@ function getParents(name, parents, object) {
     }
 }
 
-function hasPermission(group, perm, callback) {
-    var groupsList = getParents(group, [], groups);
-    groupsList[groupsList.length] = group;
+function hasPermission(user_id, perm, callback) {
+    database.getGroup(user_id, function (grps) {
+        var hasPerms = false;
 
-    for (var index in groupsList) {
-        var perms = getGroupPerms(groupsList[index], groups);
+       async.each(grps, function (group, cb) {
+           var groupsList = getParents(group, [], groups);
+           groupsList[groupsList.length] = group;
 
-        for (var permIndex in perms) {
-            if (perm == perms[permIndex]) {
-                return callback(true);
-            }
-        }
-    }
+           for (var index in groupsList) {
+               var perms = getGroupPerms(groupsList[index], groups);
 
-    callback(false);
+               for (var permIndex in perms) {
+                   if (perm == perms[permIndex]) {
+                       hasPerms = true;
+                       break;
+                   }
+               }
+           }
+
+           cb();
+       }, function () {
+            callback(hasPerms);
+       });
+    });
 }
 
 function getAllGroups(object) {

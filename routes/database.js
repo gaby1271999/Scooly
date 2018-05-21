@@ -224,52 +224,6 @@ function getUserProfilePic(user_id, callback) {
     });
 }
 
-function getAllUserInformation(callback) {
-    var usersObject = [];
-
-    var sql = "SELECT id, username FROM users;";
-    connection.query(sql, function (error, rows) {
-        if (!error) {
-            async.each(rows, function (userObject, callback) {
-                async.series([
-                    function (callback) {
-                        getUserClassName(userObject.id, function (error, className) {
-                            if (!error) {
-                                if (className.length > 0) {
-                                    userObject['class'] = className;
-                                }
-                            }
-
-                            callback(null);
-                        });
-                    },
-
-                    function (callback) {
-                        getGroup(userObject.id, function (list) {
-                            if (list.length > 0) {
-                                userObject['group'] = list;
-                                delete userObject['id'];
-
-                                usersObject[usersObject.length] = userObject;
-                                callback(null);
-                            } else {
-                                delete userObject['id'];
-
-                                usersObject[usersObject.length] = userObject;
-                                callback(null);
-                            }
-                        });
-                    }
-                ], function (error) {
-                    callback();
-                });
-            }, function (err) {
-                callback(usersObject);
-            })
-        }
-    });
-}
-
 function containsGroup(user_id, group, callback) {
     getGroup(user_id, function (groups) {
         var contains = false;
@@ -516,17 +470,21 @@ function getUserClassID(id, callback) {
 
 function getUserClassName(id, callback) {
     getUserClassID(id, function (error, classId) {
-        var sql = "SELECT * FROM classes WHERE id=?;";
+        if (!error) {
+            var sql = "SELECT * FROM classes WHERE id=?;";
 
-        connection.query(sql, [classId], function (error, results) {
-            if (!error) {
-                if (results.length == 1) {
-                    return callback(null, results[0].name);
+            connection.query(sql, [classId], function (error, results) {
+                if (!error) {
+                    if (results.length == 1) {
+                        return callback(null, results[0].name);
+                    }
                 }
-            }
 
-            callback('ERROR');
-        });
+                callback('ERROR');
+            });
+        } else {
+            callback(null, '');
+        }
     });
 }
 
@@ -1576,6 +1534,36 @@ function getOpenedMails(user_id, opened, callback) {
     });
 }
 
+function getUserInformation(username, callback) {
+    getUserId(username, function (error, user_id) {
+        if (!error) {
+            async.series([
+                function (cb) {
+                    getUserClassName(user_id, function (error, class_name) {
+                        if (!error) {
+                            cb(null, class_name);
+                        } else {
+                            cb(error);
+                        }
+                    });
+                }, function (cb) {
+                    getGroup(user_id, function (groups) {
+                       cb(null, groups);
+                    });
+                }
+            ], function (error, results) {
+                if (!error) {
+                    callback({class: results[0], groups: results[1]});
+                } else {
+                    callback({});
+                }
+            });
+        } else {
+            callback({});
+        }
+    });
+}
+
 function defaultDatabase() {
     var userTable = "CREATE TABLE IF NOT EXISTS users(id INT NOT NULL AUTO_INCREMENT, username VARCHAR(30) NOT NULL, password VARCHAR(60) NOT NULL, PRIMARY KEY (`id`));";
     connection.query(userTable);
@@ -1650,7 +1638,6 @@ exports.getUserProfilePic = getUserProfilePic;
 exports.changePassword = changePassword;
 exports.getGroup = getGroup;
 exports.addUser = addUser;
-exports.getAllUserInformation = getAllUserInformation;
 exports.removeUser = removeUser;
 exports.changeUserGroup = changeUserGroup;
 exports.getConnection = getConnection;
@@ -1699,6 +1686,7 @@ exports.getAttachmentPath = getAttachmentPath;
 exports.addAttachment = addAttachment;
 exports.sendConcept = sendConcept;
 exports.getOpenedMails = getOpenedMails;
+exports.getUserInformation = getUserInformation;
 
 
 

@@ -577,87 +577,141 @@
                 </form>
             </div>
 
+            <style>
+                #autocomplete-items {
+                    position: absolute;
+                    border: 1px solid black;
+                    background-color: mediumseagreen;
+                    border-bottom: none;
+                    z-index: 99;
+                    top: 100%;
+                    left: 0;
+                    right: 0;
+                    border-collapse: collapse;
+                    width: 50%;
+                }
+
+                .autocomplete-item {
+                    background: 0;
+                    display: block;
+                    border-bottom: 1px solid black;
+                    padding: 5px;
+                }
+
+                .autocomplete-item:hover {
+                    background-color: wheat;
+                    transition: 1s;
+                }
+            </style>
+
+            <script>
+                document.addEventListener('click', function(e) {
+                    e = e || window.event;
+                    if (document.getElementById('autocomplete-items') != undefined) {
+                        if (e.target.id != 'autocomplete-item') {
+                            document.getElementById('autocomplete-items').parentNode.removeChild(document.getElementById('autocomplete-items'));
+                        }
+                    }
+                }, false);
+
+                function getRelevantUser(element) {
+                    $.getJSON(window.origin + '/json/getusers/' + element.value, function (data) {
+                        if (document.getElementById('autocomplete-items') != undefined) {
+                            document.getElementById('autocomplete-items').parentNode.removeChild(document.getElementById('autocomplete-items'));
+                        }
+
+                        var divElement = document.createElement('div');
+                        divElement.setAttribute('id', 'autocomplete-items');
+                        element.parentNode.appendChild(divElement);
+
+                        for (var index in data) {
+                            var aElement = document.createElement('a');
+                            aElement.setAttribute('class', 'autocomplete-item');
+                            aElement.setAttribute('onclick', 'selectItem(this)');
+                            aElement.innerHTML = data[index];
+                            divElement.appendChild(aElement);
+                        }
+                    });
+                }
+
+                function selectItem(element) {
+                    var inputElement = document.getElementById('users_input');
+                    inputElement.value = element.innerHTML;
+
+                    document.getElementById('autocomplete-items').parentNode.removeChild(document.getElementById('autocomplete-items'));
+                }
+
+                function getUserData() {
+                    var username = document.getElementById('users_input').value;
+
+                    $.getJSON(window.origin + '/json/getuserinformation/' + username, function (data) {
+                        console.log(data);
+                        if (Object.keys(data).length > 0) {
+                            document.getElementById('user-detail-name').innerHTML = username;
+
+                            document.getElementById('user-detail-class-name').value = data.class;
+
+                            var ulElement = document.getElementById('user-detail-groups');
+                            while (ulElement.firstChild) {
+                                ulElement.removeChild(ulElement.firstChild);
+                            }
+
+                            for (var index in data.groups) {
+                                var liElement = document.createElement('li');
+                                liElement.setAttribute('style', 'background-color: green; color: white; padding: 5px; width: 50%;');
+                                liElement.innerHTML = data.groups[index];
+                                ulElement.appendChild(liElement);
+                            }
+
+                            document.getElementById('user-details').style.display = 'block';
+                        }
+                    });
+                }
+
+                function getGroups(element) {
+                    if (element.value.length > 0) {
+                        $.getJSON(window.origin + '/json/getgroups/' + element.value, function (data) {
+                            console.log(data)
+                        });
+                    }
+                }
+            </script>
+
             <div id="all-users" style="display: none">
                 <h1>All the system users</h1>
 
-                <table class="user_table" style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                        <th style="width: 70%;">Username</th>
-                        <th style="width: 10%;">Class</th>
-                        <th style="width: 10%;">Group</th>
-                        <th style="width: 10%;">Select</th>
-                    </tr>
+                <p>Search a  user.</p>
 
-                    <form id="user_list_form" method="POST" action="/admin_settings/user_list">
-                        <% for (var user in users) { %>
-                            <tr class="user">
-                                <td><%= users[user].username %></td>
+                <div style="position: relative;">
+                    <input id="users_input" style="flex: 1; padding: 5px; resize: none; border: 0; outline: 0; background-color: #0e90d2; width: 30%;" maxlength="40" oninput="getRelevantUser(this)" placeholder="Username">
+                </div>
 
-                                <td>
-                                    <select onchange="selectClass('<%= users[user].username.replace(/.'/g, '\\\'') %>', this)" id="class-select-<%= user %>" name="class">
-                                        <script>
-                                            function addOptions() {
-                                                var user = <%- JSON.stringify(users[user]) %>
-                                                var i = <%- JSON.stringify(user) %>
-                                                var className = user.class == undefined ? '' : user.class;
+                <button onclick="getUserData()">Submit</button>
 
-                                                document.write('<option selected>' + className + '</option>');
+                <div id="user-details" style="border: 2px solid black; margin: 5% 5% 0 0; padding: 1%; display: none;">
+                    <h3>Username: <span id="user-detail-name" style="color: red;">test</span></h3>
 
-                                                $.getJSON(window.origin + '/json/getclasses', function (data) {
-                                                    data[data.length] = '';
+                    <div style="margin: 1% 0 0 5%;">
+                        <h4>Class</h4>
 
-                                                    for (var index in data) {
-                                                        if (className != data[index]) {
-                                                            var optionElement = document.createElement('option');
-                                                            optionElement.innerHTML = data[index];
+                        <div style="margin: 1% 0 0 1%;">
+                            <input id="user-detail-class-name" placeholder="classname">
+                        </div>
 
-                                                            document.getElementById('class-select-' + i).appendChild(optionElement);
-                                                        }
-                                                    }
-                                                });
-                                            }
+                        <h4 style="margin-top: 2.5%;">Group</h4>
+                        <div style="margin: 0.5% 0 0 1%;">
+                            <ul id="user-detail-groups" style="text-decoration: none; list-style-type: none;"></ul>
 
-                                            addOptions();
-                                        </script>
-                                    </select>
-                                </td>
+                            <button onclick="javascript:document.getElementById('user-detail-groups-adder').style.display = 'inline';" style="background-color: green; margin: 1% 0 1% 0; outline: 0; border: 0; padding: 5px; font-size: 16px; color: white;">Add group</button><br>
 
-                                <td>
-                                    <select onchange="selectGroup('<%= users[user].username %>', this)">
-                                        <option disabled selected><%= users[user].group %></option>
+                            <div id="user-detail-groups-adder" style="display: none; margin-top: 1%;">
+                                <input style="outline: 0; border: 1px solid black;" oninput="getGroups(this)" placeholder="Group name">
+                            </div>
+                        </div>
 
-                                        <script>
-                                            var user = <%- JSON.stringify(users[user]) %>
-                                            var allGroups = getAllGroups(permission['groups']);
-
-                                            for (var index in allGroups) {
-                                                if (user.group != allGroups[index]) {
-                                                    document.write('<option>' + allGroups[index] + '</option>');
-                                                }
-                                            }
-                                        </script>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="checkbox" name="username" value="<%= users[user].username %>"/>
-                                </td>
-                            </tr>
-                        <% } %>
-
-                        <tr>
-                            <td style="width: 5%">
-                                <input type="button" id="selectall" value="Select all" onclick="selectAll()"/>
-                                <input type="button" value="Submit changed class." onclick="submitUserClass()"/>
-                                <input type="button" value="Submit changed groups." onclick="submitUserGroup()"/>
-                                <input type="submit" id="removeselected" value="remove selected items"/>
-                            </td>
-                        </tr>
-                    </form>
-                </table>
-
-                <form id="user_group_form" method="POST" action="/admin_settings/user_group"></form>
-
-                <form id="user_class_form" method="POST" action="/admin_settings/user_class"></form>
+                        <button style="background-color: #990000; outline: 0; border: 0; padding: 5px; font-size: 16px; color: white; margin-top: 2.5%;">Delete user</button>
+                    </div>
+                </div>
             </div>
 
             <div id="add-class" style="display: none">

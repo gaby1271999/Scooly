@@ -42,11 +42,9 @@ router.get('/haspermission/:permission', function (req, res) {
     if (req.session && req.session.user_id) {
         var permission = req.params.permission;
 
-        database.getGroup(req.session.user_id, function (groupName) {
-            permissionManager.hasPermission(groupName, permission, function (result) {
-                res.setHeader('Content-type', 'application/json');
-                res.send(JSON.stringify({hasPermission: result}));
-            });
+        permissionManager.hasPermission(req.session.user_id, permission, function (result) {
+            res.setHeader('Content-type', 'application/json');
+            res.send(JSON.stringify({hasPermission: result}));
         });
     } else {
         res.status(err.status || 500);
@@ -289,6 +287,17 @@ router.get('/deletesubjectfile/:path&:filename', function (req, res) {
     if (req.session && req.session.user_id) {
         subjectManager.deleteFile(req.session.user_id, decodeURIComponent(req.params.path), decodeURIComponent(req.params.filename), function (error) {
            res.end(error);
+        });
+    }
+});
+
+router.get('/getuserinformation/:username', function (req, res) {
+    if (req.session && req.session.user_id) {
+        permissionManager.hasPermission(req.session.user_id, "admin.panel", function (result) {
+            database.getUserInformation(req.params.username, function (information) {
+                res.setHeader('Content-type', 'application/json');
+                res.send(JSON.stringify(information));
+            });
         });
     }
 });
