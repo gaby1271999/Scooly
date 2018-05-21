@@ -398,6 +398,10 @@ function addFolder(path, callback) {
     }
 }
 
+function getTeacherId(subject, className) {
+
+}
+
 exports.getSubjects = getSubjects;
 exports.getDocuments = getDocuments;
 exports.getDocumentPath = getDocumentPath;

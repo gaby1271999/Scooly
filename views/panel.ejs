@@ -321,6 +321,8 @@
                     document.getElementById('mail_concept_question_window').style.display = 'none';
                 } else if (document.getElementById('mail_attachment_window').style.display != 'none') {
                     document.getElementById('mail_attachment_window').style.display = 'none';
+                } else if (document.getElementById('subject_remove_window').style.display != 'none') {
+                    document.body.removeChild(document.getElementById('subject_remove_window'));
                 }
             }
         </script>
@@ -338,8 +340,35 @@
             </div>
 
             <div class="alerts">
-                <img class="logo-img" style="margin-right: 10%" src="/images/icons/appointment_icon.png">
-                <img class="logo-img" style="margin-right: 10%" src="/images/icons/message_icon.png">
+                <!--<img class="logo-img" style="margin-right: 10%" src="/images/icons/appointment_icon.png">-->
+                <a style="cursor: pointer;" onclick="changeModule('messages')">
+                    <div style="position: relative; display: inline-block; margin-right: 10%;">
+                        <img class="logo-img" src="/images/icons/message_icon.png">
+                        <div id="header_mail_closed" style="position: absolute; bottom: -5px; right: -5px; background-color: red; height: 20px; width: 20px; opacity: 0.8; border-radius: 50%; color: white; text-align: center; display: table;">
+                            <script>
+                                function mailClosed() {
+                                    $.ajax({
+                                        url: window.origin + '/json/closedmails',
+                                        type: 'GET',
+                                        success: function(data) {
+                                            var element = document.getElementById('header_mail_closed');
+
+                                            if (data.closed > 0) {
+                                                element.style.display = 'table';
+                                                element.innerHTML = '<span style="display: table-cell; vertical-align: middle;">' + data.closed + '</span>';
+                                            } else {
+                                                element.style.display = 'none';
+                                            }
+                                        }
+                                    });
+                                }
+
+                                mailClosed();
+                                setInterval(mailClosed, 1000*2);
+                            </script>
+                        </div>
+                    </div>
+                </a>
                 <a onclick="logout()" style="cursor: pointer;"><img class="logo-img" style="margin-right: 10%" src="/images/icons/logout_icon.png"></a>
             </div>
         </div>
@@ -380,7 +409,7 @@
 
                     <li class="menu-item">
                         <!--<a onclick="changeModule('mydocuments')"><img class="menu_img" src="/images/icons/document_icon.png"><%= object.documents %></a>--->
-                        <a onclick="alert('KOOP U EEN FUCKING USB STICK!!!')"><img class="menu_img" src="/images/icons/document_icon.png"><%= object.documents %></a>
+                        <a onclick=""><img class="menu_img" src="/images/icons/document_icon.png"><%= object.documents %></a>
                     </li>
 
                     <li id="admin_page_button" class="menu-item" style="display: none;">
@@ -493,11 +522,18 @@
 
                     <div id="subject_note_open_window_description" style="margin-left: 1%; border: 1px solid black; padding: 0.5%;"></div>
 
-                    <button id="subject_note_open_window_edit" style="display: none; background-color: red; border: none; margin-left: 1%; margin-top: 5px; padding: 0.5%;">Edit note</button>
+                    <button id="subject_note_open_window_edit" style="display: none; background-color: orange; border: none; margin-left: 1%; margin-top: 5px; padding: 0.5%;">Edit note</button>
+                    <button id="subject_note_open_window_remove" style="display: none; background-color: red; border: none; margin-left: 1%; margin-top: 5px; padding: 0.5%;">Remove note</button>
                     <script>
                         hasPermission("subject.note.edit", function (result) {
                             if (result) {
                                 document.getElementById('subject_note_open_window_edit').style.display = 'initial';
+                            }
+                        });
+
+                        hasPermission("subject.note.remove", function (result) {
+                            if (result) {
+                                document.getElementById('subject_note_open_window_remove').style.display = 'initial';
                             }
                         });
                     </script>

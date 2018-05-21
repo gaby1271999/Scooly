@@ -87,13 +87,18 @@ function getGroup(user_id, callback) {
     var sql = "SELECT group_name FROM permission WHERE user_id=" + user_id + ";";
     connection.query(sql, function (error, rows) {
         if (!error) {
-            if (rows != undefined) {
-                if (rows.length == 1) {
-                    callback(rows[0].group_name);
-                }
+            if (rows.length > 0) {
+                var list = [];
+
+                async.each(rows, function (row, cb) {
+                    list[list.length] = row.group_name;
+                    cb();
+                }, function () {
+                    callback(list);
+                });
             }
         } else {
-            callback('');
+            callback([]);
         }
     })
 }
@@ -240,9 +245,9 @@ function getAllUserInformation(callback) {
                     },
 
                     function (callback) {
-                        getGroup(userObject.id, function (groupName) {
-                            if (groupName.length > 0) {
-                                userObject['group'] = groupName;
+                        getGroup(userObject.id, function (list) {
+                            if (list.length > 0) {
+                                userObject['group'] = list;
                                 delete userObject['id'];
 
                                 usersObject[usersObject.length] = userObject;
@@ -265,23 +270,55 @@ function getAllUserInformation(callback) {
     });
 }
 
-function changeUserGroup(username, group) {
-    getUserId(username, function (error, id) {
-        if (!error) {
-            getGroup(id, function (groupName) {
-                var sql;
-                if (groupName.length > 0) {
-                    sql = "UPDATE permission SET group_name='" + group + "' WHERE user_id=" + id + ";";
-                } else {
-                    sql = "INSERT INTO permission(user_id, group_name) VALUES(" + id + ", '" + group + "');";
-                }
+function containsGroup(user_id, group, callback) {
+    getGroup(user_id, function (groups) {
+        var contains = false;
 
-                connection.query(sql, function (error, result) {
-                    if (!error) {
-                        return;
-                    }
-                });
+        for (var index in groups) {
+            if (groups[index] == group) {
+                contains = true;
+                break;
+            }
+        }
+
+        callback(contains);
+    });
+}
+
+function changeUserGroup(username, oldGroup, group, callback) {
+    getUserId(username, function (error, user_id) {
+        if (!error) {
+            containsGroup(user_id, group, function (contains) {
+               if (!contains) {
+                   var sql = "SELECT * FROM permission WHERE user_id=? AND group_name=?;";
+
+                   connection.query(sql, [user_id, oldGroup], function (error, results) {
+                       if (!error) {
+                           if (results.length == 1) {
+                               var sqlUpdate = "UPDATE permission SET group_name=? WHERE user_id=? AND id=?;";
+
+                               connection.query(sqlUpdate, [group, user_id, results[0].id], function (error) {
+                                   callback(error);
+                               });
+                           } else if (results.length == 0) {
+                               var sqlInsert = "INSERT INTO permission(user_id, group_name) VALUES(?, ?);";
+
+                               connection.query(sqlInsert, [user_id, group], function (error) {
+                                   callback(error);
+                               });
+                           } else {
+                               callback('ERROR');
+                           }
+                       } else {
+                           callback(error);
+                       }
+                   });
+               } else {
+                   callback('ERROR');
+               }
             });
+        } else {
+            callback(error);
         }
     });
 }
@@ -421,14 +458,24 @@ function editSubjectNote(id, title, description, public, callback) {
     });
 }
 
-function deleteSubjectNote(id) {
+function getNote(note_id, callback) {
+    var sql = "SELECT * FROM subject_notes WHERE id=?;";
+
+    connection.query(sql, [note_id], function (error, results) {
+       if (!error) {
+           if (results.length == 1) {
+              return callback(null, results[0]);
+           }
+       }
+
+       callback('error');
+    });
+}
+
+function deleteSubjectNote(id, callback) {
     var sql = "DELETE FROM subject_notes WHERE id=?;";
-    connection.query(sql, [id], function (error) {
-        if (!error) {
-            return callback(null);
-        } else {
-            return callback('ERROR');
-        }
+    connection.query(sql, [id], function () {
+        callback();
     });
 }
 
@@ -726,6 +773,14 @@ function getVisability(path, callback) {
         } else {
             callback(true);
         }
+    });
+}
+
+function deleteVisability(path, callback) {
+    var sql = "DELETE FROM file_visability WHERE path=?;";
+
+    connection.query(sql, [path], function (error) {
+       callback(error);
     });
 }
 
@@ -1509,6 +1564,18 @@ function hasAttachment(mail_id, callback) {
     });
 }
 
+function getOpenedMails(user_id, opened, callback) {
+    var sql = "SELECT * FROM mail_opened WHERE user_id=? AND opened=?;";
+
+    connection.query(sql, [user_id, opened], function (error, results) {
+        if (!error) {
+            return callback(null, results.length);
+        }
+
+        callback(error);
+    });
+}
+
 function defaultDatabase() {
     var userTable = "CREATE TABLE IF NOT EXISTS users(id INT NOT NULL AUTO_INCREMENT, username VARCHAR(30) NOT NULL, password VARCHAR(60) NOT NULL, PRIMARY KEY (`id`));";
     connection.query(userTable);
@@ -1613,6 +1680,8 @@ exports.removeFromClass = removeFromClass;
 exports.addToClass = addToClass;
 exports.changeVisability = changeVisability;
 exports.getVisability = getVisability;
+exports.deleteVisability = deleteVisability;
+exports.getNote = getNote;
 exports.sendMail = sendMail;
 exports.addConcept = addConcept;
 exports.updateConcept = updateConcept;
@@ -1629,6 +1698,7 @@ exports.hasAttachment = hasAttachment;
 exports.getAttachmentPath = getAttachmentPath;
 exports.addAttachment = addAttachment;
 exports.sendConcept = sendConcept;
+exports.getOpenedMails = getOpenedMails;
 
 
 

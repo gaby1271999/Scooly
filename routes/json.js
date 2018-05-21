@@ -3,6 +3,7 @@ var express = require('express');
 var news = require('./modules/news_module');
 var messageManager = require('./modules/message_module');
 var agendaManager = require('./modules/agenda_module');
+var subjectManager = require('./modules/subject_module');
 var classUtils = require('./modules/class_utils');
 var database = require('./database');
 var permissionManager = require('./permission');
@@ -90,6 +91,23 @@ router.get('/deletemail/:mail_id&:location', function (req, res) {
                 res.send([]);
             });
         }
+    } else {
+        res.status(err.status || 500);
+        res.render('error');
+    }
+});
+
+router.get('/closedmails', function (req, res) {
+    if (req.session && req.session.user_id) {
+        database.getOpenedMails(req.session.user_id, 0, function (error, closed) {
+            if (!error) {
+                var object = {closed: closed};
+                res.setHeader('Content-type', 'application/json');
+                res.send(object);
+            } else {
+                res.end();
+            }
+        });
     } else {
         res.status(err.status || 500);
         res.render('error');
@@ -247,6 +265,32 @@ router.get('/changefilevisability/:visability&:path', function (req, res) {
         res.setHeader('Content-type', 'application/json');
         res.send(JSON.stringify([]));
     });
+});
+
+router.get('/deletenote/:note_id', function (req, res) {
+    if (req.session && req.session.user_id) {
+        database.getNote(req.params.note_id, function (error, result) {
+            if (!error) {
+                if (result.user_id == req.session.user_id) {
+                    database.deleteSubjectNote(req.params.note_id, function () {
+                        res.end('success');
+                    });
+                } else {
+                    res.end('error');
+                }
+            } else {
+                res.end('error');
+            }
+        });
+    }
+});
+
+router.get('/deletesubjectfile/:path&:filename', function (req, res) {
+    if (req.session && req.session.user_id) {
+        subjectManager.deleteFile(req.session.user_id, decodeURIComponent(req.params.path), decodeURIComponent(req.params.filename), function (error) {
+           res.end(error);
+        });
+    }
 });
 
 module.exports = router;

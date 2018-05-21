@@ -54,6 +54,7 @@ groups:
       - subjetc.fs.editor
       - subject.file.visability
       - subject.note.add
+      - subject.note.remove
       - subject.note.edit
 permissions: 
   - news.add
@@ -79,4 +80,5 @@ permissions:
   - subjetc.fs.editor
   - subject.file.visability
   - subject.note.add
+  - subject.note.remove
   - subject.note.edit

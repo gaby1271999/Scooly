@@ -439,8 +439,8 @@
                     divElement.innerHTML = "<div class='daycontainer' onclick='openDay(" + dayOfWeek + ", \"" + formatedDate + "\")' id='" + dayOfWeek + "'>" +
                         "<div id='agenda_date' style='background-color: " + bgColor + "; color: " + color + ";'>" +
                         "<div id='agenda-item-cobweb-" + index + "'  style='position: relative;'>" +
-                        "<div style='position: absolute; top: 50%; height: 50px; width: 50px; margin: -25px auto auto calc(50% - 25px); background-color: darkgreen; border-radius: 50%; border: 2px solid black; line-height: 45px; text-align: center;'>" +
-                        "<div style='font-size: 30px;'>" + dd + "</div>" +
+                        "<div style='position: absolute; top: 30%; left: 30%; height: 40%; width: 40%; background-color: darkgreen; border-radius: 50%; border: 2px solid black; text-align: center; display: table;'>" +
+                        "<span style='display: table-cell; vertical-align: middle; font-size: 200%;'>" + dd + "</span>" +
                         "</div>" +
                         //"<div style='position: absolute; top: 50%; height: 25px; width: 25px; margin: -55px auto auto calc(50% - 12.5px); background-color: #2F2F2F; border-radius: 50%;'>" +
                         //"</div>" +
@@ -449,34 +449,77 @@
                         "</div>";
                     agendaElement.appendChild(divElement);
 
-                    //addAgendaItems(document.getElementById('agenda-item-cobweb-' + index));
+
+                    var formatDateArgs = formatedDate.split('/');
+                    var selectedDate = new Date(formatDateArgs[2], parseInt(formatDateArgs[1])-1, formatDateArgs[0]);
+
+                    var list = [];
+                    for (var i in data) {
+                        var deliveryDate = new Date(data[i].delivery_date)
+                        if (selectedDate.getDate() == deliveryDate.getDate()
+                            && selectedDate.getMonth() == deliveryDate.getMonth()
+                            && selectedDate.getMonth() == deliveryDate.getMonth()) {
+                            var color = '#2F2F2F';
+                            if (data[i].type == 'test') {
+                                color = 'red';
+                            } else if (data[i].type == 'task') {
+                                color = 'orange';
+                            } else if (data[i].type == 'note') {
+                                color = 'lightgreen';
+                            }
+
+
+                            list[list.length] = {color: color, hour: hourOfDate(deliveryDate)};
+                        }
+                    }
+
+                    //TODO
+                    addAgendaItems(document.getElementById('agenda-item-cobweb-' + index), list);
                 }
             }
         });
     }
 
-    function addAgendaItems(parent) {
+    function addAgendaItems(parent, items) {
         var angle = Math.floor((Math.random() * 360) + 1);
 
-        for (var i = 0; i < 8; i++) {
+        for (var i = 0; i < items.length; i++) {
+            var obj = items[i];
             var element = document.createElement('div');
 
-            var marginTop = -12.5;
-            var marginLeft = 12.5;
+            var marginTop = -35;
+            var marginLeft = 35;
 
-            marginTop -= Math.sin(degreesToRadians(angle))*45;
-            marginLeft -= Math.cos(degreesToRadians(angle))*55;
+            marginTop = Math.sin(degreesToRadians(angle))*marginTop;
+            marginLeft = Math.cos(degreesToRadians(angle))*marginLeft;
 
-            element.setAttribute('style', 'position: absolute; top: 50%; height: 25px; width: 25px; margin: ' + marginTop + 'px auto auto calc(50% - ' + marginLeft + 'px); background-color: #2F2F2F; border-radius: 50%;');
+            element.setAttribute('style', 'position: absolute; top: 42.5%; left: 42.5%; height: 15%; width: 15%; margin: ' + marginTop + '% auto auto ' + marginLeft + '%; background-color: ' + obj.color + '; border-radius: 50%; color: white; text-align: center; display: table;');
+            element.innerHTML = '<span style="display: table-cell; vertical-align: middle;">' + obj.hour + '</span>';
             parent.appendChild(element);
 
-            angle += 45;
+            angle += (360/items.length);
         }
     }
 
     function degreesToRadians(degrees) {
         var pi = Math.PI;
         return degrees * (pi/180);
+    }
+
+    function hourOfDate(date) {
+        for (var day in weekPlanning) {
+            if (dayToNumber(day) == date.getDay()-1) {
+                for (var index in weekPlanning[day]) {
+                    if (betweenTime(date, weekPlanning[day][index])) {
+                        return (++index);
+                    }
+                }
+
+                break;
+            }
+        }
+
+        return 0;
     }
 
     var monthdifference = 0;

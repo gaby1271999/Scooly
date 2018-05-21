@@ -66,11 +66,14 @@ router.post('/user_list', function(req, res) {
 });
 
 router.post('/user_group', function(req, res) {
+    //TODO
+    /*
     for (var field in req.body) {
         if (field != 'username') {
             database.changeUserGroup(field, req.body[field]);
         }
-    }
+    }*/
+
 
     var encodedString = encodeURIComponent('changed group.');
     res.redirect('/admin/?result=' + encodedString);
