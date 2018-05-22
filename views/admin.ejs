@@ -578,7 +578,7 @@
             </div>
 
             <style>
-                #autocomplete-items {
+                .autocomplete-items {
                     position: absolute;
                     border: 1px solid black;
                     background-color: mediumseagreen;
@@ -602,26 +602,51 @@
                     background-color: wheat;
                     transition: 1s;
                 }
+
+                .groups-list-item {
+                    padding: 5px;
+                    display: block;
+                    background-color: none;
+                }
+
+                .groups-list-item:hover {
+                    background-color: darkred;
+                    color: white;
+                    transition: 1s;
+                }
             </style>
 
             <script>
                 document.addEventListener('click', function(e) {
                     e = e || window.event;
-                    if (document.getElementById('autocomplete-items') != undefined) {
-                        if (e.target.id != 'autocomplete-item') {
-                            document.getElementById('autocomplete-items').parentNode.removeChild(document.getElementById('autocomplete-items'));
+                    if (document.getElementById('autocomplete-search-user') != undefined) {
+                        if (e.target.id != 'autocomplete-search-user') {
+                            document.getElementById('autocomplete-search-user').parentNode.removeChild(document.getElementById('autocomplete-search-user'));
+                        }
+                    }
+
+                    if (document.getElementById('autocomplete-search-groups') != undefined) {
+                        if (e.target.id != 'autocomplete-search-groups') {
+                            document.getElementById('autocomplete-search-groups').parentNode.removeChild(document.getElementById('autocomplete-search-groups'));
+                        }
+                    }
+
+                    if (document.getElementById('autocomplete-search-classes') != undefined) {
+                        if (e.target.id != 'autocomplete-search-classes') {
+                            document.getElementById('autocomplete-search-classes').parentNode.removeChild(document.getElementById('autocomplete-search-classes'));
                         }
                     }
                 }, false);
 
                 function getRelevantUser(element) {
                     $.getJSON(window.origin + '/json/getusers/' + element.value, function (data) {
-                        if (document.getElementById('autocomplete-items') != undefined) {
-                            document.getElementById('autocomplete-items').parentNode.removeChild(document.getElementById('autocomplete-items'));
+                        if (document.getElementById('autocomplete-search-user') != undefined) {
+                            document.getElementById('autocomplete-search-user').parentNode.removeChild(document.getElementById('autocomplete-search-user'));
                         }
 
                         var divElement = document.createElement('div');
-                        divElement.setAttribute('id', 'autocomplete-items');
+                        divElement.setAttribute('class', 'autocomplete-items');
+                        divElement.setAttribute('id', 'autocomplete-search-user');
                         element.parentNode.appendChild(divElement);
 
                         for (var index in data) {
@@ -638,30 +663,28 @@
                     var inputElement = document.getElementById('users_input');
                     inputElement.value = element.innerHTML;
 
-                    document.getElementById('autocomplete-items').parentNode.removeChild(document.getElementById('autocomplete-items'));
+                    document.getElementById('autocomplete-search-user').parentNode.removeChild(document.getElementById('autocomplete-search-user'));
                 }
 
                 function getUserData() {
                     var username = document.getElementById('users_input').value;
 
                     $.getJSON(window.origin + '/json/getuserinformation/' + username, function (data) {
-                        console.log(data);
                         if (Object.keys(data).length > 0) {
                             document.getElementById('user-detail-name').innerHTML = username;
 
-                            document.getElementById('user-detail-class-name').value = data.class;
+                            document.getElementById('user-detail-photo').src = window.origin + '/avatars/' + username;
 
-                            var ulElement = document.getElementById('user-detail-groups');
-                            while (ulElement.firstChild) {
-                                ulElement.removeChild(ulElement.firstChild);
+                            var aElement = document.getElementById('user-detail-class');
+                            if (data.class.length > 0) {
+                                document.getElementById('user-detail-class').innerHTML = data.class;
+                                document.getElementById('user-detail-class').parentNode.style.backgroundColor = 'green';
+                            } else {
+                                document.getElementById('user-detail-class').innerHTML = 'No class for this user.';
+                                document.getElementById('user-detail-class').parentNode.style.backgroundColor = '#990000';
                             }
 
-                            for (var index in data.groups) {
-                                var liElement = document.createElement('li');
-                                liElement.setAttribute('style', 'background-color: green; color: white; padding: 5px; width: 50%;');
-                                liElement.innerHTML = data.groups[index];
-                                ulElement.appendChild(liElement);
-                            }
+                            updateGroups(data);
 
                             document.getElementById('user-details').style.display = 'block';
                         }
@@ -671,9 +694,125 @@
                 function getGroups(element) {
                     if (element.value.length > 0) {
                         $.getJSON(window.origin + '/json/getgroups/' + element.value, function (data) {
-                            console.log(data)
+                            if (document.getElementById('autocomplete-search-groups') != undefined) {
+                                document.getElementById('autocomplete-search-groups').parentNode.removeChild(document.getElementById('autocomplete-search-groups'));
+                            }
+
+                            var divElement = document.createElement('div');
+                            divElement.setAttribute('class', 'autocomplete-items');
+                            divElement.setAttribute('id', 'autocomplete-search-groups');
+                            element.parentNode.appendChild(divElement);
+
+                            for (var index in data) {
+                                var aElement = document.createElement('a');
+                                aElement.setAttribute('class', 'autocomplete-item');
+                                aElement.setAttribute('onclick', 'selectGroup(this)');
+                                aElement.innerHTML = data[index];
+                                divElement.appendChild(aElement);
+                            }
                         });
                     }
+                }
+
+                function selectGroup(element) {
+                    document.getElementById('user-detail-group').value = element.innerHTML;
+
+                    document.getElementById('autocomplete-search-groups').parentNode.removeChild(document.getElementById('autocomplete-search-groups'));
+                }
+
+                function openMore(element) {
+                    if (element.dataset.opened == 'true') {
+                        element.dataset.opened = 'false';
+
+                        document.getElementById('user_detail-groups-more').src = '/images/icons/plus_icon.png';
+                        document.getElementById('user-detail-groups-adder').style.display = 'none';
+                    } else {
+                        element.dataset.opened = 'true';
+
+                        document.getElementById('user_detail-groups-more').src = '/images/icons/minus_icon.png';
+                        document.getElementById('user-detail-groups-adder').style.display = 'inline';
+                    }
+                }
+
+                function addGroupToUser() {
+                    $.ajax({
+                        url: window.origin + '/admin/addgroup/' + document.getElementById('user-detail-name').innerHTML + '&' + document.getElementById('user-detail-group').value,
+                        type: 'GET',
+                        success: function (data) {
+                            document.getElementById('user-detail-group').value = '';
+
+                            updateGroups(data);
+                        }
+                    });
+                }
+
+                function removeGroup(element) {
+                    $.ajax({
+                        url: window.origin + '/admin/removegroup/' + document.getElementById('user-detail-name').innerHTML + '&' + element.innerHTML,
+                        type: 'GET',
+                        success: function (data) {
+                            updateGroups(data);
+                        }
+                    });
+                }
+
+                function updateGroups(object) {
+                    var ulElement = document.getElementById('user-detail-groups');
+
+                    while (ulElement.firstChild) {
+                        ulElement.removeChild(ulElement.firstChild);
+                    }
+
+                    for (var index in object.groups) {
+                        var liElement = document.createElement('li');
+                        liElement.setAttribute('style', 'background-color: green; color: white; width: 50%;');
+                        liElement.innerHTML = '<a class="groups-list-item" onclick="removeGroup(this)">' + object.groups[index] + '</a>';
+                        ulElement.appendChild(liElement);
+                    }
+                }
+
+                function openClassEditor() {
+                    document.getElementById('user-detail-class-editor').style.display = 'initial';
+                }
+
+                function searchClasses(element) {
+                    if (element.value.length > 0) {
+                        $.getJSON(window.origin + '/json/getclasses/' + element.value, function (data) {
+                            if (document.getElementById('autocomplete-search-classes') != undefined) {
+                                document.getElementById('autocomplete-search-classes').parentNode.removeChild(document.getElementById('autocomplete-search-classes'));
+                            }
+
+                            var divElement = document.createElement('div');
+                            divElement.setAttribute('class', 'autocomplete-items');
+                            divElement.setAttribute('id', 'autocomplete-search-classes');
+                            element.parentNode.appendChild(divElement);
+
+                            for (var index in data) {
+                                var aElement = document.createElement('a');
+                                aElement.setAttribute('class', 'autocomplete-item');
+                                aElement.setAttribute('onclick', 'selectClass(this)');
+                                aElement.innerHTML = data[index];
+                                divElement.appendChild(aElement);
+                            }
+                        });
+                    }
+                }
+
+                function selectClass(element) {
+                    document.getElementById('user-detail-class-name').value = element.innerHTML;
+
+                    document.getElementById('autocomplete-search-classes').parentNode.removeChild(document.getElementById('autocomplete-search-classes'));
+                }
+                
+                function changeClass() {
+                    /*
+                    $.ajax({
+                        url: window.origin + '/admin/removegroup/' + document.getElementById('user-detail-name').innerHTML + '&' + element.innerHTML,
+                        type: 'GET',
+                        success: function (data) {
+                            updateGroups(data);
+                        }
+                    });*/
                 }
             </script>
 
@@ -683,29 +822,43 @@
                 <p>Search a  user.</p>
 
                 <div style="position: relative;">
-                    <input id="users_input" style="flex: 1; padding: 5px; resize: none; border: 0; outline: 0; background-color: #0e90d2; width: 30%;" maxlength="40" oninput="getRelevantUser(this)" placeholder="Username">
+                    <input id="users_input" style="flex: 1; padding: 5px; border: 0; outline: 0; background-color: #0e90d2; width: 30%;" maxlength="40" oninput="getRelevantUser(this)" placeholder="Username">
                 </div>
 
                 <button onclick="getUserData()">Submit</button>
 
                 <div id="user-details" style="border: 2px solid black; margin: 5% 5% 0 0; padding: 1%; display: none;">
-                    <h3>Username: <span id="user-detail-name" style="color: red;">test</span></h3>
+                    <h3 style="display: inline-block;">Username: <span id="user-detail-name" style="color: red;">test</span></h3>
+
+                    <img id="user-detail-photo" style="border-radius: 50%; float: right; width: 100px; height: auto; border: 5px solid black;">
 
                     <div style="margin: 1% 0 0 5%;">
                         <h4>Class</h4>
 
                         <div style="margin: 1% 0 0 1%;">
-                            <input id="user-detail-class-name" placeholder="classname">
+                            <div style="padding: 5px; width: 50%; background-color: green; color: white; margin-bottom: 1%;"><span id="user-detail-class"></span><a onclick="openClassEditor()" style="float: right; cursor: pointer;">Edit class</a></div>
+
+                            <div id="user-detail-class-editor" style="display: none;">
+                                <div style="position: relative; margin-bottom: 1%;">
+                                    <input id="user-detail-class-name"  style="padding: 5px; border: 0; outline: 0; background-color: #7aba7b; width: 30%; border: 1px solid black;" oninput="searchClasses(this)" placeholder="Class name">
+                                </div>
+
+                                <button onclick="changeClass()" style="background-color: green; padding: 5px; outline: 0; border: 0; color: white;">Change class</button>
+                            </div>
                         </div>
 
                         <h4 style="margin-top: 2.5%;">Group</h4>
                         <div style="margin: 0.5% 0 0 1%;">
-                            <ul id="user-detail-groups" style="text-decoration: none; list-style-type: none;"></ul>
+                            <ul id="user-detail-groups" style="text-decoration: none; list-style-type: none; margin: 0 0 1% 0;"></ul>
 
-                            <button onclick="javascript:document.getElementById('user-detail-groups-adder').style.display = 'inline';" style="background-color: green; margin: 1% 0 1% 0; outline: 0; border: 0; padding: 5px; font-size: 16px; color: white;">Add group</button><br>
+                            <a onclick="openMore(this)" data-opened="false" style="cursor: pointer;">More <img id="user_detail-groups-more" style="width: 15px; height: auto;" src="/images/icons/plus_icon.png"></a><br>
 
                             <div id="user-detail-groups-adder" style="display: none; margin-top: 1%;">
-                                <input style="outline: 0; border: 1px solid black;" oninput="getGroups(this)" placeholder="Group name">
+                                <div style="position: relative;">
+                                    <input id="user-detail-group" style="padding: 5px; border: 0; outline: 0; background-color: #7aba7b; width: 30%; border: 1px solid black;" oninput="getGroups(this)" placeholder="Group name"><br>
+                                </div>
+
+                                <button onclick="addGroupToUser()" style="background-color: green; margin: 1% 0 1% 0; outline: 0; border: 0; padding: 5px; font-size: 16px; color: white;">Add group</button>
                             </div>
                         </div>
 

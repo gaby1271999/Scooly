@@ -1,15 +1,22 @@
 var express = require('express');
 var fs = require('fs');
+var database = require('./database');
 var router = express.Router();
 
 /* GET home page. */
-router.get('/:id', function(req, res) {
+router.get('/:username', function(req, res) {
     var path = __dirname.replace("routes", "private/images/profiles/");
 
     if (req.session && req.session.user_id) {
-        fs.readdir(path.concat(req.params.id), function (error, files) {
+        database.getUserId(req.params.username, function (error, user_id) {
             if (!error) {
-                res.sendFile(path.concat(req.params.id) + "/" + files[0]);
+                fs.readdir(path.concat(req.params.id), function (error, files) {
+                    if (!error) {
+                        res.sendFile(path.concat(req.params.id) + "/" + files[0]);
+                    } else {
+                        res.sendFile(path + "/unknown.jpg");
+                    }
+                });
             } else {
                 res.sendFile(path + "/unknown.jpg");
             }

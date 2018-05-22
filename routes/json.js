@@ -246,11 +246,44 @@ router.get('/documents/:subject&:class', function (req, res) {
     }
 });
 
-router.get('/getclasses', function (req, res) {
+router.get('/getclasses/:word', function (req, res) {
     if (req.session && req.session.user_id) {
         database.getAllClasses(function (classes) {
+            var word = req.params.word;
+
+            classes.sort(function (a, b) {
+                var aCount = 0;
+                var bCount = 0;
+                for (var index in word) {
+                    for (var aIndex in a) {
+                        if (a[aIndex] == word[index]) {
+                            aCount++;
+                            break;
+                        }
+                    }
+
+                    for (var bIndex in b) {
+                        if (b[bIndex] == word[index]) {
+                            bCount++;
+                            break;
+                        }
+                    }
+                }
+
+                if (aCount > bCount) {
+                    return -1;
+                } else if (aCount < bCount) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            });
+
+            var newClassesList = classes.slice(0, 5);
+
             res.setHeader('Content-type', 'application/json');
-            res.send(JSON.stringify(classes));
+            res.send(JSON.stringify(newClassesList));
+
         });
     } else {
         res.status(err.status || 500);

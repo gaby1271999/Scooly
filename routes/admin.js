@@ -26,4 +26,40 @@ router.get('/', function(req, res) {
     });
 });
 
+router.get('/addgroup/:username&:group_name', function (req, res) {
+    if (req.session && req.session.user_id) {
+        database.addGroup(req.params.username, req.params.group_name, function (error, result) {
+            if (!error) {
+                if (!error) {
+                    database.getUserInformation(req.params.username, function (information) {
+                        res.setHeader('Content-type', 'application/json');
+                        res.send(information);
+                    });
+                } else {
+                    res.setHeader('Content-type', 'application/json');
+                    res.send([]);
+                }
+            } else {
+                res.end("Group or user doesn\'t exists.")
+            }
+        });
+    }
+});
+
+router.get('/removegroup/:username&:group_name', function (req, res) {
+    if (req.session && req.session.user_id) {
+        database.removeGroup(req.params.username, req.params.group_name, function (error) {
+            if (!error) {
+                database.getUserInformation(req.params.username, function (information) {
+                    res.setHeader('Content-type', 'application/json');
+                    res.send(information);
+                });
+            } else {
+                res.setHeader('Content-type', 'application/json');
+                res.send([]);
+            }
+        });
+    }
+});
+
 module.exports = router;

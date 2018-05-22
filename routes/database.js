@@ -2,6 +2,7 @@ var mysql = require('mysql');
 var bcrypt = require('bcryptjs');
 var async = require('async');
 var fs = require('fs');
+var permissionManager = require('./permission');
 
 var connection;
 
@@ -136,7 +137,7 @@ function getUserId(username, callback) {
             }
         }
 
-        return callback(true);
+        callback(true);
     });
 }
 
@@ -237,6 +238,48 @@ function containsGroup(user_id, group, callback) {
 
         callback(contains);
     });
+}
+
+function addGroup(username, group_name, callback) {
+    getUserId(username, function (error, user_id) {
+        if (!error) {
+            containsGroup(user_id, group_name, function (contains) {
+                if (!contains) {
+                    if (permissionManager.isExistingGroup(group_name, permissionManager.groups)) {
+                        var sql = "INSERT INTO permission(user_id, group_name) VALUES(?, ?);";
+
+                        connection.query(sql, [user_id, group_name], function (error, result) {
+                            if (!error) {
+                                callback(false, true);
+                            }  else {
+                                callback(error);
+                            }
+                        });
+                    } else {
+                        callback('ERROR');
+                    }
+                } else {
+                    callback(null);
+                }
+            });
+        } else {
+            callback(error);
+        }
+    })
+}
+
+function removeGroup(username, group_name, callback) {
+    getUserId(username, function (error, user_id) {
+        if (!error) {
+            var sql = "DELETE FROM permission WHERE user_id=? AND group_name=?";
+
+            connection.query(sql, [user_id, group_name], function (error, result) {
+                callback(error);
+            });
+        } else {
+            callback(error);
+        }
+    })
 }
 
 function changeUserGroup(username, oldGroup, group, callback) {
@@ -1687,6 +1730,8 @@ exports.addAttachment = addAttachment;
 exports.sendConcept = sendConcept;
 exports.getOpenedMails = getOpenedMails;
 exports.getUserInformation = getUserInformation;
+exports.addGroup = addGroup;
+exports.removeGroup = removeGroup;
 
 
 
