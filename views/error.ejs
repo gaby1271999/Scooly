@@ -6,7 +6,7 @@
         <style>
             canvas {
                 border: 1px solid #d3d3d3;
-                background-image: url("images/2d-game-background.jpg");
+                background-image: url("/images/2d-game-background.jpg");
                 background-size: cover;
             }
         </style>
@@ -31,7 +31,7 @@
             var obstacleSpeed = 3;
             var points = 0;
             var scoreObject;
-            var sound = new sound("sounds/game_music.mp3");
+            var sound = new sound(window.origin + "/sounds/game_music.mp3");
 
             function startGame() {
                 if (playing == false) {
@@ -59,7 +59,6 @@
 
                     window.addEventListener("keydown", function (event) {
                         game.key = event.keyCode;
-                        console.log(event.keyCode);
                     })
 
                     window.addEventListener("keyup", function (event) {

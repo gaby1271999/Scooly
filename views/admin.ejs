@@ -121,12 +121,6 @@
                     document.getElementById('alert_box').style.background = 'crimson';
                     document.getElementById('alert_box').style.borderColor = 'red';
                     document.getElementById('alert_box').style.display = 'initial';
-
-                    for (var index = 0; index < document.body.children.length; index++) {
-                        if (index > 1) {
-                            document.body.children[index].style.filter = 'blur(2px)';
-                        }
-                    }
                 }
             }
 
@@ -134,12 +128,7 @@
                 document.getElementById('alert_box_overlay').style.display = 'none';
 
                 document.getElementById('alert_box').style.display = 'none';
-
-                for (var index = 0; index < document.body.children.length; index++) {
-                    if (index > 1) {
-                        document.body.children[index].style.filter = 'none';
-                    }
-                }
+                document.getElementById('delete-user-window').style.display = 'none';
             }
 
             var changedPermissions = {};
@@ -473,6 +462,35 @@
 
                 document.getElementById(id).style.display = 'block';
             }
+
+            function openClassSelector(element) {
+                if (element.value.length > 0) {
+                    if (document.getElementById('autocomplete-adduser-class') != undefined) {
+                        element.parentNode.removeChild(document.getElementById('autocomplete-adduser-class'));
+                    }
+
+                    $.getJSON(window.origin + '/json/getclasses/' + element.value, function (data) {
+                        var divElement = document.createElement('div');
+                        divElement.setAttribute('class', 'autocomplete-items');
+                        divElement.setAttribute('id', 'autocomplete-adduser-class');
+                        element.parentNode.appendChild(divElement);
+
+                        for (var index in data) {
+                            var aElement = document.createElement('a');
+                            aElement.setAttribute('class', 'autocomplete-item');
+                            aElement.setAttribute('onclick', 'selectClassName(this)');
+                            aElement.innerHTML = data[index];
+                            divElement.appendChild(aElement);
+                        }
+                    });
+                }
+            }
+
+            function selectClassName(element) {
+                document.getElementById('add-user-class').value = element.innerHTML;
+
+                document.getElementById('autocomplete-adduser-class').parentNode.removeChild(document.getElementById('autocomplete-adduser-class'));
+            }
         </script>
     </head>
 
@@ -551,33 +569,35 @@
             <div id="add-user" style="display: none">
                 <h1>Add a user to the system</h1>
 
-                <form method="POST" action="/admin_settings/adduser">
-                    <input type="text" name="username" placeholder="Username">
-                    <input type="password" name="password" placeholder="Password">
-                    <input type="password" name="password_check" placeholder="Password">
-                    <input type="text" name="group_name" placeholder="Group name">
-                    <select id="add-user-select-class" name="class">
-                        <script>
-                            $.getJSON(window.origin + '/json/getclasses', function (data) {
-                                data[data.length] = '';
-
-                                for (var i = 0; i < data.length; i++) {
-                                    var optionElement = document.createElement('option');
-                                    if (data[i].length == 0) {
-                                        optionElement.setAttribute('selected', '');
-                                    }
-                                    optionElement.innerHTML = data[i];
-
-                                    document.getElementById('add-user-select-class').appendChild(optionElement);
-                                }
-                            });
-                        </script>
-                    </select>
-                    <input type="submit" value="Submit">
-                </form>
+                <div style="margin: 1% 0 0 5%;">
+                    <form method="POST" action="/admin_settings/adduser">
+                        <input class="newuser-input" autocomplete="OFF" type="text" name="username" placeholder="Username"><br>
+                        <input class="newuser-input" type="password" name="password" placeholder="Password"><br>
+                        <input class="newuser-input" type="password" name="password_check" placeholder="Password"><br>
+                        <input class="newuser-input" type="text" name="group_name" placeholder="Group name"><br>
+                        <div style="position: relative;">
+                            <input id="add-user-class" class="newuser-input" autocomplete="OFF" name="class" oninput="openClassSelector(this)" placeholder="Class name">
+                        </div>
+                        <input type="submit" value="Submit">
+                    </form>
+                </div>
             </div>
 
             <style>
+                .newuser-input {
+                    padding: 5px;
+                    width: 50%;
+                    border: 1px solid black;
+                    background-color: #0e90d2;
+                    margin-bottom: 1%;
+                    outline: 0;
+                    color: white;
+                }
+
+                .newuser-input::placeholder {
+                    color: white;
+                }
+
                 .autocomplete-items {
                     position: absolute;
                     border: 1px solid black;
@@ -594,6 +614,7 @@
                 .autocomplete-item {
                     background: 0;
                     display: block;
+                    cursor: pointer;
                     border-bottom: 1px solid black;
                     padding: 5px;
                 }
@@ -606,7 +627,6 @@
                 .groups-list-item {
                     padding: 5px;
                     display: block;
-                    background-color: none;
                 }
 
                 .groups-list-item:hover {
@@ -634,6 +654,12 @@
                     if (document.getElementById('autocomplete-search-classes') != undefined) {
                         if (e.target.id != 'autocomplete-search-classes') {
                             document.getElementById('autocomplete-search-classes').parentNode.removeChild(document.getElementById('autocomplete-search-classes'));
+                        }
+                    }
+
+                    if (document.getElementById('autocomplete-adduser-class') != undefined) {
+                        if (e.target.id != 'autocomplete-adduser-class') {
+                            document.getElementById('autocomplete-adduser-class').parentNode.removeChild(document.getElementById('autocomplete-adduser-class'));
                         }
                     }
                 }, false);
@@ -675,14 +701,7 @@
 
                             document.getElementById('user-detail-photo').src = window.origin + '/avatars/' + username;
 
-                            var aElement = document.getElementById('user-detail-class');
-                            if (data.class.length > 0) {
-                                document.getElementById('user-detail-class').innerHTML = data.class;
-                                document.getElementById('user-detail-class').parentNode.style.backgroundColor = 'green';
-                            } else {
-                                document.getElementById('user-detail-class').innerHTML = 'No class for this user.';
-                                document.getElementById('user-detail-class').parentNode.style.backgroundColor = '#990000';
-                            }
+                            updateClass(data);
 
                             updateGroups(data);
 
@@ -805,14 +824,45 @@
                 }
                 
                 function changeClass() {
-                    /*
                     $.ajax({
-                        url: window.origin + '/admin/removegroup/' + document.getElementById('user-detail-name').innerHTML + '&' + element.innerHTML,
+                        url: window.origin + '/admin/addtoclass/' + document.getElementById('user-detail-name').innerHTML + (document.getElementById('user-detail-class-name').value.length > 0 ? '/' + document.getElementById('user-detail-class-name').value : ''),
                         type: 'GET',
                         success: function (data) {
-                            updateGroups(data);
+                            updateClass(data);
                         }
-                    });*/
+                    });
+                }
+
+                function updateClass(object) {
+                    var element = document.getElementById('user-detail-class');
+                    if (object.class.length > 0) {
+                        element.innerHTML = object.class;
+                        element.parentNode.style.backgroundColor = 'green';
+                    } else {
+                        element.innerHTML = 'No class for this user.';
+                        element.parentNode.style.backgroundColor = '#990000';
+                    }
+
+                    document.getElementById('user-detail-class-name').value = '';
+                    document.getElementById('user-detail-class-editor').style.display = 'none';
+                }
+
+                function deleteUser(del) {
+                    console.log(del)
+                    if (del) {
+                        console.log('test');
+                        $.ajax({
+                            url: window.origin + '/admin/deleteuser/' + document.getElementById('user-detail-name').innerHTML,
+                            type: 'GET',
+                            success: function () {
+                                closeAlert();
+                                document.getElementById('user-details').style.display = 'none';
+                            }
+                        });
+                    } else {
+                        document.getElementById('alert_box_overlay').style.display = 'initial';
+                        document.getElementById('delete-user-window').style.display = 'initial';
+                    }
                 }
             </script>
 
@@ -822,7 +872,7 @@
                 <p>Search a  user.</p>
 
                 <div style="position: relative;">
-                    <input id="users_input" style="flex: 1; padding: 5px; border: 0; outline: 0; background-color: #0e90d2; width: 30%;" maxlength="40" oninput="getRelevantUser(this)" placeholder="Username">
+                    <input id="users_input" class="newuser-input" maxlength="40" oninput="getRelevantUser(this)" placeholder="Username">
                 </div>
 
                 <button onclick="getUserData()">Submit</button>
@@ -862,7 +912,7 @@
                             </div>
                         </div>
 
-                        <button style="background-color: #990000; outline: 0; border: 0; padding: 5px; font-size: 16px; color: white; margin-top: 2.5%;">Delete user</button>
+                        <button onclick="deleteUser(false)" style="background-color: #990000; outline: 0; border: 0; padding: 5px; font-size: 16px; color: white; margin-top: 2.5%;">Delete user</button>
                     </div>
                 </div>
             </div>
@@ -871,7 +921,7 @@
                 <h1>Add a class to the system</h1>
 
                 <form method="POST" action="/admin_settings/addclass">
-                    <input type="text" name="class_name" placeholder="Class name">
+                    <input class="newuser-input" autocomplete="OFF" type="text" name="class_name" placeholder="Class name"><br>
                     <input type="submit" value="Submit">
                 </form>
             </div>
@@ -880,7 +930,7 @@
                 <h1>Remove a class from the system</h1>
 
                 <form method="POST" action="/admin_settings/removeclass">
-                    <input type="text" name="class_name" placeholder="Class name">
+                    <input class="newuser-input" autocomplete="OFF" type="text" name="class_name" placeholder="Class name"><br>
                     <input type="submit" value="Submit">
                 </form>
             </div>
@@ -889,8 +939,8 @@
                 <h1>Add a group to the permission system</h1>
 
                 <form method="POST" action="/admin_settings/addgroup">
-                    <input type="text" name="group_name" placeholder="Group name">
-                    <input type="text" name="department" placeholder="Department name">
+                    <input class="newuser-input" autocomplete="OFF" type="text" name="group_name" placeholder="Group name"><br>
+                    <input class="newuser-input" autocomplete="OFF" type="text" name="department" placeholder="Department name"><br>
                     <input type="submit" value="Submit">
                 </form>
             </div>
@@ -899,7 +949,7 @@
                 <h1>Remove a group from the permission system</h1>
 
                 <form method="POST" action="/admin_settings/removegroup">
-                    <input type="text" name="group_name" placeholder="Group name">
+                    <input class="newuser-input" autocomplete="OFF" type="text" name="group_name" placeholder="Group name"><br>
                     <input type="submit" value="Submit">
                 </form>
             </div>
@@ -979,7 +1029,6 @@
                         var tableElement = document.getElementById('week_planning_table');
 
                         for (var dayName in weekPlanning) {
-                            console.log(dayName);
                             var trElementDayName = document.createElement('tr');
                             var thElement = document.createElement('th');
                             thElement.innerHTML = dayName;
@@ -1007,6 +1056,18 @@
                         }
                     </script>
                 </table>
+            </div>
+        </div>
+
+
+        <div id="delete-user-window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div style="margin: 1% 3% 1% 3%;">
+                    <h3>Are your shure you want to delete <span style="color: red;" id="delete-user-window-username"></span></h3>
+
+                    <button onclick="deleteUser(true)" style="border: 0; outline: 0; background-color: #00A65A; width: 50%; padding: 1%; float: left;">YES</button>
+                    <button onclick="closeAlert()" style="border: 0; outline: 0; background-color: #E50000; width: 50%; padding: 1%;">NO</button>
+                </div>
             </div>
         </div>
     </body>

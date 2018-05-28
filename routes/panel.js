@@ -139,16 +139,14 @@ function typeNameToId(type) {
 
 router.post('/addagendaitem', function (req, res) {
     if (req.session && req.session.user_id) {
-        database.getGroup(req.session.user_id, function (groupName) {
-            permission.hasPermission(groupName, "agenda.additem." + req.body.type, function (result) {
-                if (result) {
-                    database.addAgendaItem(req.body.delivery_date, req.body.period, typeNameToId(req.body.type), req.session.user_id, req.body.title, req.body.description, (typeNameToId(req.body.type) != 1) ? req.body.group_name : null, function (succes) {
-                        if (succes) {
-                            res.redirect('/panel/schoolschedule');
-                        }
-                    });
-                }
-            });
+        permission.hasPermission(req.session.user_id, "agenda.additem." + req.body.type, function (result) {
+            if (result) {
+                database.addAgendaItem(req.body.delivery_date, req.body.period, typeNameToId(req.body.type), req.session.user_id, req.body.title, req.body.description, (typeNameToId(req.body.type) != 1) ? req.body.group_name : null, function (succes) {
+                    if (succes) {
+                        res.redirect('/panel/schoolschedule');
+                    }
+                });
+            }
         });
     }
 });
@@ -276,13 +274,23 @@ router.post('/addfolder', function (req, res) {
 
 router.post('/addnote', function (req, res) {
     if (req.session && req.session.user_id) {
+        var pathArgs = req.body.path.split('/');
+        pathArgs.pop();
+
+        var newPath = '';
+        for (var i in pathArgs) {
+            newPath += '/' + pathArgs[i];
+        }
+
+        var url = encodeURIComponent('subject' + newPath);
+
         if (req.body.id.length == 0) {
             database.addSubjectNote(req.session.user_id, req.body.title, req.body.description, req.session.user_id + '/' + req.body.path, req.body.public == 'on' ? 1 : 0, function (error) {
-                res.redirect('/panel/subject');
+                res.redirect('/panel/' + url);
             });
         } else {
             database.editSubjectNote(req.body.id, req.body.title, req.body.description, req.body.public == 'on' ? 1 : 0, function (error) {
-                res.redirect('/panel/subject');
+                res.redirect('/panel/' + url);
             });
         }
     }

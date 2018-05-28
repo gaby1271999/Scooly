@@ -2,6 +2,7 @@ var mysql = require('mysql');
 var bcrypt = require('bcryptjs');
 var async = require('async');
 var fs = require('fs');
+var fse = require('fs-extra');
 var permissionManager = require('./permission');
 
 var connection;
@@ -141,6 +142,101 @@ function getUserId(username, callback) {
     });
 }
 
+function deleteUser(username, callback) {
+    getUserId(username, function (error, user_id) {
+       if (!error) {
+           //TABLES TO DELETE FROM
+           /*
+
+           file_visability
+           permission
+           subject_notes
+           user_class
+           users
+
+            */
+
+           async.series([
+               function (cb) {
+                   var sql = "SELECT * FROM file_visability;";
+                   
+                   connection.query(sql, function (error, results) {
+                      if (!error) {
+                          async.each(results, function (result, callb) {
+                              var file_user_id =  result.path.split('/');
+                              
+                              if (user_id == file_user_id) {
+                                  var sqlDelete = "DELETE FROM file_visability WHERE id=?;";
+                                  
+                                  connection.query(sqlDelete, [result.id], function () {
+                                      callb();
+                                  });
+                              } else {
+                                  callb();
+                              }
+                          }, function () {
+                              cb();
+                          });
+                      } else {
+                          cb();
+                      }
+                   });
+               },
+
+               function (cb) {
+                   var sqlDelete = "DELETE FROM subject_notes WHERE user_id=?;";
+
+                   connection.query(sqlDelete, [user_id], function () {
+                       cb();
+                   });
+               },
+
+               function (cb) {
+                   var path = __dirname.replace('routes', 'private/subjects/' + user_id);
+
+                   if (fs.existsSync(path)) {
+                       fse.remove(path, function (error) {
+                           console.log(error)
+                          cb();
+                       });
+                   } else {
+                       cb();
+                   }
+               },
+               
+               function (cb) {
+                   var sqlDelete = "DELETE FROM permission WHERE user_id=?;";
+                   
+                   connection.query(sqlDelete, [user_id], function (error, result) {
+                       cb();
+                   });
+               },
+
+               function (cb) {
+                   var sqlDelete = "DELETE FROM user_class WHERE user_id=?;";
+
+                   connection.query(sqlDelete, [user_id], function () {
+                       cb();
+                   });
+               },
+
+
+               function (cb) {
+                   var sqlDelete = "DELETE FROM users WHERE id=?;";
+
+                   connection.query(sqlDelete, [user_id], function () {
+                       cb();
+                   });
+               },
+           ], function () {
+              callback();
+           });
+       } else {
+           callback();
+       }
+    });
+}
+
 function addUser(username, password, groupName, classId, callback) {
     connection.escape(username);
     connection.escape(password);
@@ -168,10 +264,16 @@ function addUser(username, password, groupName, classId, callback) {
                                                 } else {
                                                     return callback("You added the user " + username + " to the school users!");
                                                 }
+                                            } else {
+                                                callback("A problem has occurred.");
                                             }
                                         });
+                                    } else {
+                                        callback("A problem has occurred.");
                                     }
                                 });
+                            } else {
+                                callback("A problem has occurred.");
                             }
                         });
                     } else {
@@ -613,49 +715,102 @@ function removeFromClass(className, callback) {
     });
 }
 
-function addUserToClass(user_id, class_id, callback) {
-    var sql = "INSERT INTO user_class(user_id, class_id) VALUES(?, ?);";
-
-    connection.query(sql, [user_id, class_id], function (error, result) {
-       if (!error) {
-           return callback(null, result);
-       }
-
-       callback('ERROR', null);
+function addUserToClass(username, class_name, callback) {
+    getUserId(username, function (error, user_id) {
+        if (!error) {
+            editUserClass(user_id, class_name, function (error) {
+               callback(error);
+            });
+        }
     });
 }
 
-function editUserClass(user_id, class_id, callback) {
-    var sql = "UPDATE user_class SET class_id=? WHERE user_id=?;";
+function getClassId(class_name, callback) {
+    var sql = "SELECT * FROM classes WHERE name=?;";
 
-    connection.query(sql, [class_id, user_id], function (error, result) {
+    connection.query(sql, [class_name], function (error, results) {
         if (!error) {
-            return callback(null, result);
+            if (results.length == 1) {
+                return callback(null, results[0].id);
+            }
+        }
+
+        callback('ERROR');
+    });
+}
+
+function hasClass(user_id, callback) {
+    var sql = "SELECT * FROM user_class WHERE user_id=?;";
+
+    connection.query(sql, [user_id], function (error, results) {
+        if (!error) {
+            if (results.length == 1) {
+                return callback(true);
+            }
+        }
+
+        callback(false);
+    });
+}
+
+
+
+function editUserClass(user_id, class_name, callback) {
+    hasClass(user_id, function (result) {
+        console.log('Has class ' + result);
+        if (result) {
+            if (class_name.length > 0) {
+                getClassId(class_name, function (error, class_id) {
+                    if (!error) {
+                        var sql = "UPDATE user_class SET class_id=? WHERE user_id=?;";
+
+                        connection.query(sql, [class_id, user_id], function (error) {
+                            callback(error);
+                        });
+                    } else {
+                        callback(error);
+                    }
+                });
+            } else {
+                var sql = "DELETE FROM user_class WHERE user_id=?;";
+
+                connection.query(sql, [user_id], function (error) {
+                    callback(error);
+                });
+            }
+        } else {
+            if (class_name.length > 0) {
+                getClassId(class_name, function (error, class_id) {
+                    if (!error) {
+                        var sql = "INSERT INTO user_class(user_id, class_id) VALUES(?, ?);";
+
+                        connection.query(sql, [user_id, class_id], function (error) {
+                           callback(error);
+                        });
+                    } else {
+                        callback(error);
+                    }
+                });
+            } else {
+                callback(null);
+            }
+        }
+    });
+}
+
+function isUserInClass(user_id, callback) {
+    var sql = "SELECT * FROM user_class WHERE user_id=?;";
+
+    connection.query(sql, [user_id], function (error, results) {
+        if (!error) {
+            if (results.length == 0) {
+                return callback(null, false);
+            } else {
+                return callback(null, true);
+            }
         }
 
         callback('ERROR', null);
-    });
-}
-
-function isUserInClass(userName, callback) {
-    getUserId(userName, function (error, user_id) {
-        if (!error) {
-            var sql = "SELECT * FROM user_class WHERE user_id=?;";
-
-            connection.query(sql, [user_id], function (error, results) {
-                if (!error) {
-                    if (results.length == 0) {
-                        return callback(null, false);
-                    } else {
-                        return callback(null, true);
-                    }
-                }
-
-                callback('ERROR', null);
-            });
-        } else {
-            callback('ERROR', null);
-        }
     });
 }
 
@@ -688,50 +843,6 @@ function getAllClasses(callback) {
         }
 
         callback(list);
-    });
-}
-
-function addToClass(changes, callback) {
-    console.log(changes);
-
-    async.each(changes, function (object, cb) {
-        var userName = Object.keys(object)[0];
-
-        isUserInClass(userName, function (error, result) {
-            if (!error) {
-                if (object[userName].length > 0) {
-                    getUserId(userName, function (error, user_id) {
-                        if (!error) {
-                            getClassId(object[userName], function (error, class_id) {
-                                if (!error) {
-                                    if (result) {
-                                        editUserClass(user_id, class_id, function (error, result) {
-                                            cb(error, result);
-                                        });
-                                    } else {
-                                        addUserToClass(user_id, class_id, function (error, result) {
-                                            cb(error, result);
-                                        });
-                                    }
-                                } else {
-                                    cb(true, null);
-                                }
-                            });
-                        } else {
-                            cb(true, null);
-                        }
-                    });
-                } else {
-                    removeUserFromClass(userName, function (error, result) {
-                        cb(error, result);
-                    });
-                }
-            } else {
-                cb(true, null);
-            }
-        });
-    }, function (error, result) {
-        callback(error, result);
     });
 }
 
@@ -1676,6 +1787,7 @@ exports.connect = connect;
 exports.defaultDatabase = defaultDatabase;
 exports.getUsername = getUsername;
 exports.getUserId = getUserId;
+exports.deleteUser = deleteUser;
 exports.getPassword = getPassword;
 exports.getUserProfilePic = getUserProfilePic;
 exports.changePassword = changePassword;
@@ -1707,7 +1819,6 @@ exports.removeUserFromClass = removeUserFromClass;
 exports.getAllClasses = getAllClasses;
 exports.removeClassByName = removeClassByName;
 exports.removeFromClass = removeFromClass;
-exports.addToClass = addToClass;
 exports.changeVisability = changeVisability;
 exports.getVisability = getVisability;
 exports.deleteVisability = deleteVisability;

@@ -6,6 +6,126 @@ var path = require('path');
 var database = require(__dirname.replace('modules', 'database'));
 var scheduleManager = require('./schedule_manager');
 
+var direction = __dirname.replace('routes\\modules', 'private/subjects');
+function getFiles(user_id, path, callback) {
+    database.getUserClassName(user_id, function (error, class_name) {
+        if (!error) {
+            if (class_name.length > 0) {
+                var pathArgs = path.split('/');
+                var subject = path.split('/')[0];
+                var newPath = subject + '/' + class_name;
+
+                for (var index in pathArgs) {
+                    if (index > 1) {
+                        newPath += '/' + pathArgs[index];
+                    }
+                }
+
+                scheduleManager.getStudentWeek(class_name, function (lessons) {
+                    async.each(lessons, function (lesson, cb) {
+                        if (lesson.subject == subject) {
+                            cb(lesson.teacher);
+                        } else {
+                            cb();
+                        }
+                    }, function (teacher) {
+                        if (teacher != undefined) {
+                            database.getUserId(teacher, function (error, teacher_id) {
+                                if (!error) {
+                                    getDirectionInformation(teacher_id, direction + '/' + teacher_id + '/' + newPath, newPath, false, function (list) {
+                                        callback(list);
+                                    });
+                                } else {
+                                    callback([]);
+                                }
+                            });
+                        } else {
+                            callback([]);
+                        }
+                    });
+                });
+            } else {
+                var dir = direction + '/' + user_id + '/' + path;
+
+                if (fs.existsSync(dir)) {
+                    getDirectionInformation(user_id, dir, path, true, function (list) {
+                        callback(list);
+                    });
+                } else {
+                    callback([]);
+                }
+            }
+        } else {
+            callback([]);
+        }
+    });
+}
+
+function getDirectionInformation(user_id, dir, path, canSee, callback) {
+    fs.readdir(dir, function (error, files) {
+       if (!error) {
+           var list = [];
+
+           async.each(files, function (file, cb) {
+               var type = fs.statSync(dir + '/' + file).isDirectory() ? 0 : 1;
+               getSize(dir + '/' + file, function (size) {
+                   var object = {name: file, type: type, size: sizeToString(size)};
+
+                   database.getVisability(user_id + '/' + path + '/' + file, function (error, result) {
+                       var see = false;
+                       if (!error) {
+                           see = result.visability;
+                       }
+
+                       object['visible'] = see;
+
+                       if (canSee || see) {
+                           database.getSubjectNote(user_id, user_id + '/' + path + '/' + file, function (error, note) {
+                               if (note != undefined) {
+                                   if (canSee || note.public) {
+                                       object['note'] = note;
+                                   }
+                               }
+
+                               list[list.length] = object;
+
+                               cb();
+                           });
+                       } else {
+                           cb();
+                       }
+                   });
+               });
+           }, function () {
+               callback(list);
+           });
+       } else {
+           callback([]);
+       }
+    });
+}
+
+function getSize(path, callback) {
+    if (fs.statSync(path).isDirectory()) {
+        fs.readdir(path, function (error, files) {
+           if (!error && files.length > 0) {
+               var size = 0;
+               async.each(files, function (file, cb) {
+                   getSize(path + '/' + file, function (s) {
+                       size += s;
+                       cb();
+                   });
+               }, function () {
+                   callback(size);
+               });
+           } else {
+               callback(0);
+           }
+        });
+    } else {
+        callback(fs.statSync(path).size);
+    }
+}
 
 function getSubjects(id, groupName, callback) {
     scheduleManager.getStudentWeek(groupName, function (lessons) {
@@ -407,3 +527,4 @@ exports.getDocuments = getDocuments;
 exports.getDocumentPath = getDocumentPath;
 exports.uploadNewFile = uploadNewFile;
 exports.addFolder = addFolder;
+exports.getFiles = getFiles;

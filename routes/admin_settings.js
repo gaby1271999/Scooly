@@ -20,22 +20,28 @@ router.post('/adduser', function(req, res) {
         var encodedString = encodeURIComponent('Group does not exists');
         res.redirect('/admin/?result=' + encodedString);
     } else {
-        if (userClass.length == 0) {
+        if (userClass != undefined) {
+            if (userClass.length > 0) {
+                console.log('test')
+                database.addUser(username, password, groupName, userClass, function (result) {
+                    console.log('test2')
+                    var encodedString = encodeURIComponent(result);
+                    res.redirect('/admin/?result=' + encodedString);
+                });
+            } else {
+                console.log('test')
+                database.addUser(username, password, groupName, 0, function (result) {
+                    console.log('test2')
+                    var encodedString = encodeURIComponent(result);
+                    res.redirect('/admin/?result=' + encodedString);
+                });
+            }
+        } else {
+            console.log('test')
             database.addUser(username, password, groupName, 0, function (result) {
+                console.log('test2')
                 var encodedString = encodeURIComponent(result);
                 res.redirect('/admin/?result=' + encodedString);
-            });
-        } else {
-            database.getClassId(userClass, function (error, classId) {
-                if (!error) {
-                    database.addUser(username, password, groupName, classId, function (result) {
-                        var encodedString = encodeURIComponent(result);
-                        res.redirect('/admin/?result=' + encodedString);
-                    });
-                } else {
-                    var encodedString = encodeURIComponent('Class does not exists');
-                    res.redirect('/admin/?result=' + encodedString);
-                }
             });
         }
     }

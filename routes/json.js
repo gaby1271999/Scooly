@@ -246,6 +246,20 @@ router.get('/documents/:subject&:class', function (req, res) {
     }
 });
 
+router.get('/subject/:path', function (req, res) {
+    if (req.session && req.session.user_id) {
+        var path = decodeURIComponent(req.params.path);
+
+        classUtils.getFiles(req.session.user_id, path, function (files) {
+            res.setHeader('Content-type', 'application/json');
+            res.send(JSON.stringify(files));
+        });
+    } else {
+        res.status(err.status || 500);
+        res.render('error');
+    }
+});
+
 router.get('/getclasses/:word', function (req, res) {
     if (req.session && req.session.user_id) {
         database.getAllClasses(function (classes) {

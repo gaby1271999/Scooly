@@ -325,6 +325,69 @@
                     document.body.removeChild(document.getElementById('subject_remove_window'));
                 }
             }
+
+            function openLanguageMenu() {
+                if (document.getElementById('language-popup') == undefined) {
+
+                    var divElement = document.createElement('div');
+                    divElement.setAttribute('id', 'language-popup');
+                    divElement.setAttribute('style', 'position: absolute; background-color: #3C8DBC; height: 100px; width: 50px;');
+
+                    var element = document.getElementById('language_icon');
+
+                    if (element.src != window.origin + '/images/icons/language_nl_icon.png') {
+                        addlaguageElement(divElement, '/images/icons/language_nl_icon.png', 'nl');
+                    }
+                    if (element.src != window.origin + '/images/icons/language_fr_icon.png') {
+                        addlaguageElement(divElement, '/images/icons/language_fr_icon.png', 'fr');
+                    }
+                    if (element.src != window.origin + '/images/icons/language_en_icon.png') {
+                        addlaguageElement(divElement, '/images/icons/language_en_icon.png', 'en');
+                    }
+
+
+                    element.parentNode.appendChild(divElement);
+                }
+            }
+
+            function addlaguageElement(element, src, langue) {
+                var imgElement = document.createElement('img');
+                imgElement.setAttribute('class', 'logo-img');
+                imgElement.setAttribute('src', src);
+                imgElement.onclick = function () {
+                    var urlSplit = window.location.pathname.split('/');
+                    urlSplit.shift();
+
+                    var i;
+                    for (var index in urlSplit) {
+                        if (urlSplit[index] == 'nl' || urlSplit[index] == 'fr' || urlSplit[index] == 'en') {
+                            i = index;
+                        }
+                    }
+
+                    if (i == undefined) {
+                        window.location.href = window.location.href + '/' + langue;
+                    } else {
+                        urlSplit[i] = langue;
+                        var newPath = '';
+                        for (var index in urlSplit) {
+                            newPath += '/' + urlSplit[index];
+                        }
+
+                        window.location.href = window.origin + newPath;
+                    }
+                }
+                element.appendChild(imgElement);
+            }
+
+            document.addEventListener('click', function(e) {
+                e = e || window.event;
+                if (document.getElementById('language-popup') != undefined) {
+                    if (e.target.id != 'language-popup' && e.target.id != 'language_icon') {
+                        document.getElementById('language-popup').parentNode.removeChild(document.getElementById('language-popup'));
+                    }
+                }
+            }, false);
         </script>
     </header>
 
@@ -336,10 +399,33 @@
 
         <div class="header" style="background-color: #3C8DBC; width: 100%; height: 75px; position: fixed; z-index: 10; padding: 0; top: 0;">
             <div class="logo">
-                <a onclick="playSound()"><img class="logo-img" src="/images/logo/logo_scooly.png" ></a>
+                <a onclick="playSound()">
+                    <img class="logo-img" src="/images/logo/logo_scooly.png">
+                </a>
             </div>
 
             <div class="alerts">
+                <a style="margin-right: 10%;" onclick="openLanguageMenu()">
+                    <div style="position: relative; display: inline-block;">
+                        <img id="language_icon" class="logo-img">
+                    </div>
+
+                    <script>
+                        var urlSplit = window.location.href.split('/');
+
+                        var laguageElement = document.getElementById('language_icon');
+                        for (var index in urlSplit) {
+                            if (urlSplit[index] == 'nl') {
+                                laguageElement.src = '/images/icons/language_nl_icon.png';
+                            } else if (urlSplit[index] == 'fr') {
+                                laguageElement.src = '/images/icons/language_fr_icon.png';
+                            } else {
+                                laguageElement.src = '/images/icons/language_en_icon.png';
+                            }
+                        }
+
+                    </script>
+                </a>
                 <!--<img class="logo-img" style="margin-right: 10%" src="/images/icons/appointment_icon.png">-->
                 <a style="cursor: pointer;" onclick="changeModule('messages')">
                     <div style="position: relative; display: inline-block; margin-right: 10%;">
@@ -600,7 +686,22 @@
 
         <script>
             if (page.length > 0) {
-                changeModule(page)
+                var pageArgs = page.split('/');
+
+                if (pageArgs[0] == 'subject') {
+                    changeModule('subject');
+
+                    var path = '';
+                    for (var i in pageArgs) {
+                        if (i > 2) {
+                            path += '/' + pageArgs[i];
+                        }
+                    }
+
+                    toDirectory(pageArgs[1], pageArgs[2], path);
+                } else {
+                    changeModule(page);
+                }
             }
 
             function showUploadMenu() {

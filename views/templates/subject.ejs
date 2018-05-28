@@ -29,7 +29,7 @@
 
     #subject_menu_items li {
         display: inline-block;
-        width: 25%;
+        width: 33.33%;
         text-align: center;
         border-collapse: collapse;
         border: 1px solid black;
@@ -106,7 +106,7 @@
     <div id="subject_menu">
         <ul id="subject_menu_items">
             <li class="subect_menu_item">
-                <a onclick="subjectPageBack()">Go back</a>
+                <a id="subject_goback" onclick="subjectPageBack()">Go back</a>
             </li>
 
             <li class="subect_menu_item">
@@ -116,14 +116,11 @@
             <li class="subect_menu_item">
                 <a onclick="addSubjectFile()">uploadFile</a>
             </li>
-
-            <li class="subect_menu_item">
-                <a>remove</a>
-            </li>
         </ul>
     </div>
 
-    <button id="subject_goback" onclick="subjectPageBack()" style="margin: 1% 3% 1% 3%; display: none; background-color: #00A65A; border: 0; outline: 0; padding: 5px; width: 25%;">Go back</button>
+
+    <button id="subject_goback_noperm" onclick="subjectPageBack()" style="margin: 1% 3% 1% 3%; display: none; width: 100%; color: white; padding: 5px; background-color: #00A65A; border: 1px solid black;">Go back</button>
 
     <div id="subject_fs" style="display: none; margin: 1% 3% 1% 3%;">
         <table id="subject_fs_table" style="border-radius: 10px; border: 2px solid #00A65A; width: 100%;">
@@ -212,81 +209,13 @@
             if (result) {
                 document.getElementById('subject_menu').style.display = 'initial';
             } else {
-                document.getElementById('subject_goback').style.display = 'initial';
+                document.getElementById('subject_goback_noperm').style.display = 'initial';
             }
         });
 
-        $.getJSON(window.origin + '/json/documents/' + subject + '&' + className, function (files) {
-            console.log(files)
+        openDir(subject, className, '');
 
-            document.getElementById('subject_upload_path').value = subject + '/' + className;
-
-            for (var index in files) {
-                var file = files[index];
-
-                var trElement = document.createElement('tr');
-                trElement.setAttribute('oncontextmenu', 'javascript:openContextMenu(event, \'' + file.name + '\'); return false;');
-                var tdElement1 = document.createElement('td');
-                tdElement1.setAttribute('style', 'width: 60%;');
-                var aElement = document.createElement('a');
-                aElement.setAttribute('class', 'subject_fs_item');
-                aElement.setAttribute('style', 'cursor: pointer; color: black;');
-
-                var url = getFileIcon(file.name, file.type == 0 ? true : false);
-                aElement.innerHTML = '<img style="width: 15px; height: auto; margin-right: 5px;" src="' + url + '">' + file.name;
-
-                if (file.type === 0) {
-
-                    var jsonObject = JSON.stringify(file);
-
-                    aElement.setAttribute('onClick', 'openDir(\'' + subject + '\', \'' + className + '\', \'' + file.name + '\', \'' + jsonObject + '\')');
-                } else {
-                    var uri = className + '/' + file.name;
-                    var result = encodeURIComponent(uri);
-
-                    aElement.setAttribute('href', window.origin + '/download/' + subject + '&' + result);
-                }
-
-                tdElement1.appendChild(aElement);
-
-                trElement.appendChild(tdElement1);
-
-                var tdElement2 = document.createElement('td');
-                tdElement2.setAttribute('style', 'width: 15%;');
-                tdElement2.innerHTML = '<span class="subject_fs_item">' + file.size + '</span>';
-                trElement.appendChild(tdElement2);
-
-                var tdElement3 = document.createElement('td');
-                tdElement3.setAttribute('style', 'width: 15%;');
-                var aNoteElement = document.createElement('a');
-                aNoteElement.setAttribute('style', 'cursor: pointer; color: black;')
-                if (subjectNoteAdd) {
-                    if (file.note == undefined) {
-                        aNoteElement.setAttribute('onclick', 'addNote(\'' + subject + '/' + className + '/' + file.name + '\')');
-                        aNoteElement.innerHTML = '<span class="subject_fs_item">add note</span>';
-                    } else {
-                        var jsonObject = JSON.stringify(file.note);
-
-                        aNoteElement.setAttribute('onclick', 'openNote(\'' + file.name + '\', \'' + jsonObject + '\')');
-                        aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
-                    }
-                }
-                tdElement3.appendChild(aNoteElement);
-                trElement.appendChild(tdElement3);
-
-                var tdElement4 = document.createElement('td');
-                tdElement4.setAttribute('style', 'width: 10%;');
-                if (subjectFileVisability) {
-                    console.log(file.visible)
-                    tdElement4.innerHTML = '<span class="subject_fs_item"><input onchange="changeVisability(this, \'' + subject + '/' + className + '/' + file.name + '\')" type="checkbox" ' + (file.visible ? 'checked' : '') + '></span>';
-                }
-                trElement.appendChild(tdElement4);
-
-                document.getElementById('subject_fs_table').appendChild(trElement);
-            }
-
-            document.getElementById('subject_fs').style.display = 'block';
-        });
+        document.getElementById('subject_fs').style.display = 'block';
     }
 
     function openSubject(subject) {
@@ -296,63 +225,13 @@
             if (result) {
                 document.getElementById('subject_menu').style.display = 'initial';
             } else {
-                document.getElementById('subject_goback').style.display = 'initial';
+                document.getElementById('subject_goback_noperm').style.display = 'initial';
             }
         });
 
-        $.getJSON(window.origin + '/json/documents/' + subject + '&null', function (files) {
-            for (var index in files) {
-                var file = files[index];
+        openDir(subject, '', '');
 
-                var trElement = document.createElement('tr');
-                var tdElement1 = document.createElement('td');
-                tdElement1.setAttribute('style', 'width: 60%;');
-                var aElement = document.createElement('a');
-                aElement.setAttribute('class', 'subject_fs_item');
-                aElement.setAttribute('style', 'cursor: pointer; color: black;');
-
-                var url = getFileIcon(file.name, file.type == 0 ? true : false);
-                aElement.innerHTML = '<img style="width: 15px; height: auto; margin-right: 5px;" src="' + url + '">' + file.name;
-
-                if (file.type === 0) {
-
-                    var jsonObject = JSON.stringify(file);
-
-                    aElement.setAttribute('onClick', 'openDir(\'' + subject + '\', \'' + null + '\', \'' + file.name + '\', \'' + jsonObject + '\')');
-                } else {
-                    var uri = className + '/' + file.name;
-                    var result = encodeURIComponent(uri);
-
-                    aElement.setAttribute('href', window.origin + '/download/' + subject + '&' + result);
-                }
-
-                tdElement1.appendChild(aElement);
-
-                trElement.appendChild(tdElement1);
-
-                var tdElement2 = document.createElement('td');
-                tdElement2.setAttribute('style', 'width: 15%;');
-                tdElement2.innerHTML = '<span class="subject_fs_item">' + file.size + '</span>';
-                trElement.appendChild(tdElement2);
-
-                var tdElement3 = document.createElement('td');
-                tdElement3.setAttribute('style', 'width: 15%;');
-                var aNoteElement = document.createElement('a');
-                aNoteElement.setAttribute('style', 'cursor: pointer; color: black;')
-                if (file.note != undefined) {
-                    var jsonObject = JSON.stringify(file.note);
-
-                    aNoteElement.setAttribute('onclick', 'openNote(\'' + file.name + '\', \'' + jsonObject + '\')');
-                    aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
-                }
-                tdElement3.appendChild(aNoteElement);
-                trElement.appendChild(tdElement3);
-
-                document.getElementById('subject_fs_table').appendChild(trElement);
-            }
-
-            document.getElementById('subject_fs').style.display = 'block';
-        });
+        document.getElementById('subject_fs').style.display = 'block';
     }
 
     function isClassFile(files) {
@@ -366,89 +245,79 @@
         return false;
     }
 
-    function openDir(subject, className, dir, jsonString) {
-        var object = JSON.parse(jsonString);
-
+    function openDir(subject, className, dir) {
         var inputElement = document.getElementById('subject_upload_path');
-        var args = inputElement.value.split('/');
-        var replacement = '';
-        for (var i = 2; i < args.length; i++) {
-            if (i > 2) {
-                replacement += '/';
-            }
-
-            replacement += args[i];
-        }
-
-        inputElement.value += '/' + dir.replace(replacement + '/', '');
+        inputElement.value = subject + '/' + (className.length > 0 ? className : undefined) + (dir.length > 0 ? dir : '');
         path = inputElement.value;
 
-        var tableElemenet = document.getElementById('subject_fs_table');
+        $.getJSON(window.origin + '/json/subject/' + encodeURIComponent(subject + '/' + (className.length > 0 ? className : undefined) + (dir.length > 0 ? dir : '')), function (files) {
+            var tableElemenet = document.getElementById('subject_fs_table');
 
-        while (tableElemenet.children.length > 1) {
-            tableElemenet.removeChild(tableElemenet.lastChild);
-        }
-
-        for (var index in object.files) {
-            var file = object.files[index];
-
-            var trElement = document.createElement('tr');
-            trElement.setAttribute('oncontextmenu', 'javascript:openContextMenu(event, \'' + file.name + '\'); return false;');
-            var tdElement1 = document.createElement('td');
-            var aElement = document.createElement('a');
-            aElement.setAttribute('class', 'subject_fs_item');
-            aElement.setAttribute('style', 'cursor: pointer; display: block; color: black;');
-
-            var url = getFileIcon(file.name, file.type == 0 ? true : false);
-            aElement.innerHTML = '<img style="width: 15px; height: auto; margin-right: 5px;" src="' + url + '">' + file.name;
-
-            if (file.type === 0) {
-                var jsonObject = JSON.stringify(file);
-
-                aElement.setAttribute('onClick', 'openDir(\'' + subject + '\', \'' + className + '\', \'' + dir + '/' + file.name + '\', \'' + jsonObject + '\')');
-            } else {
-                var uri = (className != 'null' ? className + '/' : '') + dir + '/' + file.name;
-                var result = encodeURIComponent(uri);
-
-                aElement.setAttribute('href', window.origin + '/download/' + subject + '&' + result);
+            while (tableElemenet.children.length > 1) {
+                tableElemenet.removeChild(tableElemenet.lastChild);
             }
 
-            tdElement1.appendChild(aElement);
-            trElement.appendChild(tdElement1);
+            for (var index in files) {
+                var file = files[index];
 
-            var tdElement2 = document.createElement('td');
-            tdElement2.setAttribute('style', 'width: 15%;');
-            tdElement2.innerHTML = '<span class="subject_fs_item">' + file.size + '</span>';
-            trElement.appendChild(tdElement2);
+                var trElement = document.createElement('tr');
+                trElement.setAttribute('oncontextmenu', 'javascript:openContextMenu(event, \'' + file.name + '\'); return false;');
+                var tdElement1 = document.createElement('td');
+                var aElement = document.createElement('a');
+                aElement.setAttribute('class', 'subject_fs_item');
+                aElement.setAttribute('style', 'cursor: pointer; display: block; color: black;');
 
-            var tdElement3 = document.createElement('td');
-            tdElement3.setAttribute('style', 'width: 15%;');
-            var aNoteElement = document.createElement('a');
-            aNoteElement.setAttribute('style', 'cursor: pointer; color: black;');
+                var url = getFileIcon(file.name, file.type == 0 ? true : false);
+                aElement.innerHTML = '<img style="width: 15px; height: auto; margin-right: 5px;" src="' + url + '">' + file.name;
 
-            if (file.note != undefined) {
-                var jsonObject = JSON.stringify(file.note);
+                if (file.type === 0) {
+                    var jsonObject = JSON.stringify(file);
 
-                aNoteElement.setAttribute('onclick', 'openNote(\'' + dir + '/' + file.name + '\', \'' + jsonObject + '\')');
-                aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
-            } else {
-                if (subjectNoteAdd) {
-                    aNoteElement.setAttribute('onclick', 'addNote(\'' + subject + '/' + className + '/' + dir + '/' + file.name + '\')');
-                    aNoteElement.innerHTML = '<span class="subject_fs_item">add note</span>';
+                    aElement.setAttribute('onClick', 'openDir(\'' + subject + '\', \'' + className + '\', \'' + dir + '/' + file.name + '\')');
+                } else {
+                    var uri = (className.length > 0 ? className : '') + dir + '/' + file.name;
+                    var result = encodeURIComponent(uri);
+
+                    aElement.setAttribute('href', window.origin + '/download/' + subject + '&' + result);
                 }
-            }
-            tdElement3.appendChild(aNoteElement);
-            trElement.appendChild(tdElement3);
 
-            var tdElement4 = document.createElement('td');
-            tdElement4.setAttribute('style', 'width: 10%;');
-            if (subjectFileVisability) {
-                tdElement4.innerHTML = '<span class="subject_fs_item"><input type="checkbox" onchange="changeVisability(this, \'' + subject + '/' + className + '/' + dir + '/' + file.name + '\')" ' + (file.visible ? 'checked' : '') + '></span>';
-            }
-            trElement.appendChild(tdElement4);
+                tdElement1.appendChild(aElement);
+                trElement.appendChild(tdElement1);
 
-            document.getElementById('subject_fs_table').appendChild(trElement);
-        }
+                var tdElement2 = document.createElement('td');
+                tdElement2.setAttribute('style', 'width: 15%;');
+                tdElement2.innerHTML = '<span class="subject_fs_item">' + file.size + '</span>';
+                trElement.appendChild(tdElement2);
+
+                var tdElement3 = document.createElement('td');
+                tdElement3.setAttribute('style', 'width: 15%;');
+                var aNoteElement = document.createElement('a');
+                aNoteElement.setAttribute('style', 'cursor: pointer; color: black;');
+
+                if (file.note != undefined) {
+                    var jsonObject = JSON.stringify(file.note);
+
+                    aNoteElement.setAttribute('onclick', 'openNote(\'' + subject + '\', \'' + className + '\', \'' + dir + '\', \'' + dir + '/' + file.name + '\', \'' + jsonObject + '\')');
+                    aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
+                } else {
+                    if (subjectNoteAdd) {
+                        aNoteElement.setAttribute('onclick', 'addNote(\'' + subject + '/' + className + dir + '/' + file.name + '\')');
+                        aNoteElement.innerHTML = '<span class="subject_fs_item">add note</span>';
+                    }
+                }
+                tdElement3.appendChild(aNoteElement);
+                trElement.appendChild(tdElement3);
+
+                var tdElement4 = document.createElement('td');
+                tdElement4.setAttribute('style', 'width: 10%;');
+                if (subjectFileVisability) {
+                    tdElement4.innerHTML = '<span class="subject_fs_item"><input type="checkbox" onchange="changeVisability(this, \'' + subject + '/' + className + (dir.length > 0 ? dir : '') + '/' + file.name + '\')" ' + (file.visible ? 'checked' : '') + '></span>';
+                }
+                trElement.appendChild(tdElement4);
+
+                document.getElementById('subject_fs_table').appendChild(trElement);
+            }
+        });
     }
 
     function addSubjectFile() {
@@ -476,21 +345,37 @@
         var subjectMenuElement = document.getElementById('subject_menu');
         var subjectFSElement = document.getElementById('subject_fs');
 
+        var pathArgs = path.split('/');
+
         if (subjectsElement.style.display == 'none') {
-            subjectsElement.style.display = 'initial';
+            if (pathArgs.length == 2) {
+                subjectsElement.style.display = 'initial';
 
-            subjectMenuElement.style.display = 'none';
-            subjectFSElement.style.display = 'none';
+                subjectMenuElement.style.display = 'none';
+                subjectFSElement.style.display = 'none';
 
-            var tableElemenet = document.getElementById('subject_fs_table');
+                var tableElemenet = document.getElementById('subject_fs_table');
 
-            while (tableElemenet.children.length > 1) {
-                tableElemenet.removeChild(tableElemenet.lastChild);
+                while (tableElemenet.children.length > 1) {
+                    tableElemenet.removeChild(tableElemenet.lastChild);
+                }
+            } else {
+                var subject = pathArgs[0];
+                var className = pathArgs[1];
+
+                var dir = '';
+                for (var index in pathArgs) {
+                    if (index > 1 && index < (pathArgs.length-1)) {
+                        dir += '/' + pathArgs[index];
+                    }
+                }
+
+                openDir(subject, className, dir);
             }
         }
     }
 
-    function openNote(fileName, jsonString) {
+    function openNote(subject, className, dir, fileName, jsonString) {
         var note = JSON.parse(jsonString);
 
         var h3Element = document.getElementById('subject_note_open_window_file');
@@ -503,37 +388,39 @@
         divElement.innerHTML = note.description;
 
         var editButtonElement = document.getElementById('subject_note_open_window_edit');
-        editButtonElement.setAttribute('onclick', 'editNote(' + note.id + ', \'' + note.title + '\', \'' + note.description + '\', ' + note.public + ')');
+        editButtonElement.setAttribute('onclick', 'editNote(' + note.id + ', \'' + note.title + '\', \'' + note.description + '\', ' + note.public + ', \'' + subject + '/' + className + fileName + '\')');
 
         var removeButtonElement = document.getElementById('subject_note_open_window_remove');
-        removeButtonElement.setAttribute('onclick', 'deleteNote(' + note.id + ')');
+        removeButtonElement.setAttribute('onclick', 'deleteNote(' + note.id + ', \'' + subject + '\', \'' + className + '\', \'' + dir + '\')');
 
         document.getElementById('background_overlay').style.display = 'initial';
         document.getElementById('subject_note_open_window').style.display = 'initial';
     }
 
-    function deleteNote(id) {
+    function deleteNote(id, subject, className, dir) {
         $.ajax({
             url: window.origin + '/json/deletenote/' + id,
             type: 'GET',
-            success: function (data) {
-                console.log(data);
+            success: function () {
                 closePopup();
+                openDir(subject, className, dir);
             }
         });
     }
 
     function addNote(path) {
         clearAddNote();
+
         document.getElementById('subject-note-add-path').value = path;
 
         document.getElementById('background_overlay').style.display = 'initial';
         document.getElementById('subject_note_add_window').style.display = 'initial';
     }
 
-    function editNote(id, title, description, visible) {
+    function editNote(id, title, description, visible, path) {
         clearAddNote();
         closePopup();
+        document.getElementById('subject-note-add-path').value = path;
 
         document.getElementById('subject-note-add-id').value = id;
         document.getElementById('subject-note-add-title').value = title;
@@ -551,10 +438,7 @@
 
         $.ajax({
             url: window.origin + '/json/changefilevisability/' + visability + '&' + encodeURIComponent(path),
-            type: 'GET',
-            success: function() {
-                console.log('succes');
-            }
+            type: 'GET'
         });
     }
 
@@ -622,5 +506,22 @@
                 closePopup();
             }
         });
+    }
+
+    function toDirectory(subject, className, dir) {
+        document.getElementById('subjects').style.display = 'none';
+
+        hasPermission('subjetc.fs.editor', function (result) {;
+
+            if (result) {
+                document.getElementById('subject_menu').style.display = 'initial';
+            } else {
+                document.getElementById('subject_goback_noperm').style.display = 'initial';
+            }
+        });
+
+        openDir(subject, className, dir);
+
+        document.getElementById('subject_fs').style.display = 'block';
     }
 </script>

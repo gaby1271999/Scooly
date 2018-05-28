@@ -46,9 +46,9 @@ router.get('/addgroup/:username&:group_name', function (req, res) {
     }
 });
 
-router.get('/removegroup/:username&:group_name', function (req, res) {
+router.get('/removegroup/:username&:group_name?', function (req, res) {
     if (req.session && req.session.user_id) {
-        database.removeGroup(req.params.username, req.params.group_name, function (error) {
+        database.removeGroup(req.params.username, req.params.group_name == undefined ? '' : req.params.group_name, function (error) {
             if (!error) {
                 database.getUserInformation(req.params.username, function (information) {
                     res.setHeader('Content-type', 'application/json');
@@ -58,6 +58,32 @@ router.get('/removegroup/:username&:group_name', function (req, res) {
                 res.setHeader('Content-type', 'application/json');
                 res.send([]);
             }
+        });
+    }
+});
+
+router.get('/addtoclass/:username/:class_name?', function (req, res) {
+    if (req.session && req.session.user_id) {
+        database.addUserToClass(req.params.username, req.params.class_name == undefined ? '' : req.params.class_name, function (error) {
+            if (!error) {
+                database.getUserInformation(req.params.username, function (information) {
+                    res.setHeader('Content-type', 'application/json');
+                    res.send(information);
+                });
+            } else {
+                res.setHeader('Content-type', 'application/json');
+                res.send([]);
+            }
+        });
+    }
+});
+
+router.get('/deleteuser/:username', function (req, res) {
+    if (req.session && req.session.user_id) {
+        console.log('test');
+        database.deleteUser(req.params.username, function () {
+            console.log('test2');
+            res.end();
         });
     }
 });
