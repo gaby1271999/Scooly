@@ -371,6 +371,8 @@
                 selectElement.appendChild(optionElement);
             }
         }
+
+        changeClass(document.getElementById('agenda-edit-item-window-period'), 'agenda-edit-item-window-date', 'agenda-edit-item-window-class');
     }
 
     function getDaysInMonth(month, year) {
@@ -631,6 +633,7 @@
 
         var optionElement = element.options[element.selectedIndex];
 
+        console.log(weekObject)
         for (var index in weekObject) {
             var object = weekObject[index];
 
@@ -641,9 +644,9 @@
                             var hour = hourIndex;
                             hour++;
                             if (object.hour == hour) {
-
                                 if (weekPlanning[dayName][hourIndex] == optionElement.innerHTML) {
                                     document.getElementById(id).value = object.class;
+                                    return;
                                 }
                             }
                         }
@@ -651,6 +654,8 @@
                 }
             }
         }
+
+        document.getElementById(id).value = '';
     }
 
     function commitItemForm() {

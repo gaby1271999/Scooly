@@ -104,16 +104,17 @@ router.post('/removenews', function (req, res) {
 
 router.post('/editnews', function (req, res) {
     if (req.session && req.session.user_id) {
-        database.getGroup(req.session.user_id, function (groupName) {
-            permission.hasPermission(groupName, "news.edit", function (result) {
-                if (result) {
-                    if (req.body.title.length <= 30) {
-                        database.updateNewsArticle(req.body.article_id, req.body.title, req.body.description, function (result) {
-                            res.redirect('/panel')
-                        });
-                    }
-                }
-            });
+        permission.hasPermission(req.session.user_id, "news.edit", function (result) {
+            if (result) {
+                console.log(req.body);
+
+                /*
+                if (req.body.title.length <= 30) {
+                    database.updateNewsArticle(req.body.article_id, req.body.title, req.body.description, function (result) {
+                        res.redirect('/panel')
+                    });
+                }*/
+            }
         });
     }
 });
@@ -141,11 +142,15 @@ router.post('/addagendaitem', function (req, res) {
     if (req.session && req.session.user_id) {
         permission.hasPermission(req.session.user_id, "agenda.additem." + req.body.type, function (result) {
             if (result) {
-                database.addAgendaItem(req.body.delivery_date, req.body.period, typeNameToId(req.body.type), req.session.user_id, req.body.title, req.body.description, (typeNameToId(req.body.type) != 1) ? req.body.group_name : null, function (succes) {
-                    if (succes) {
-                        res.redirect('/panel/schoolschedule');
-                    }
-                });
+                if (req.body.type != 1 && !(req.body.group_name.length > 0)) {
+                    res.redirect('/panel/schoolschedule');
+                } else {
+                    database.addAgendaItem(req.body.delivery_date, req.body.period, typeNameToId(req.body.type), req.session.user_id, req.body.title, req.body.description, (typeNameToId(req.body.type) != 1) ? req.body.group_name : null, function (succes) {
+                        if (succes) {
+                            res.redirect('/panel/schoolschedule');
+                        }
+                    });
+                }
             }
         });
     }
@@ -252,8 +257,10 @@ router.post('/uploadsubjectfile', function (req, res) {
 
         req.files.file.mv(uploadDirection, function (error) {
             if (!error) {
+                var url = encodeURIComponent('subject/' + req.body.path);
+
                 classUtils.uploadNewFile(req.session.user_id, req.body.path + '/' + req.files.file.name, uploadDirection, function (result) {
-                    res.redirect('/panel/subject');
+                    res.redirect('/panel/' + url);
                 });
             } else {
                 console.log(error);
@@ -264,10 +271,12 @@ router.post('/uploadsubjectfile', function (req, res) {
 
 router.post('/addfolder', function (req, res) {
     if (req.session && req.session.user_id) {
-        var path = req.session.user_id + '/' + req.body.path + '/' + req.body.directory;
+        var path = req.session.user_id + '/' + req.body.path + '/' + req.body.folder;
+
+        var url = encodeURIComponent('subject/' + req.body.path);
 
         classUtils.addFolder(path, function (result) {
-            res.redirect('/panel/subject');
+            res.redirect('/panel/' + url);
         });
     }
 });

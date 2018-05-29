@@ -169,31 +169,38 @@
         subjectFileVisability = perms;
     });
 
+    var subjectFileEditor;
+    hasPermission('subjetc.fs.editor', function (perms) {
+        subjectFileEditor = perms;
+    });
+
 
     var path;
 
     function openContextMenu(e, filename) {
-        var posx = 0;
-        var posy = 0;
-        if (!e) var e = window.event;
+        if (subjectFileEditor) {
+            var posx = 0;
+            var posy = 0;
+            if (!e) var e = window.event;
 
-        if (e.pageX || e.pageY) {
-            posx = e.pageX;
-            posy = e.pageY;
+            if (e.pageX || e.pageY) {
+                posx = e.pageX;
+                posy = e.pageY;
+            }
+            else if (e.clientX || e.clientY) {
+                posx = e.clientX;
+                posy = e.clientY;
+            }
+
+
+            var divElement = document.createElement('div');
+            divElement.setAttribute('id', 'subject_remove_window');
+            divElement.setAttribute('style', 'left: ' + posx + 'px; top: ' + posy + 'px; min-height: 30px; max-width: 400px; background-color: white; border: 2px solid black; border-radius: 10px; position: absolute; z-index: 99999; overflow: hidden;');
+            divElement.innerHTML = '<a id="subject_remove" onclick="removeFile(\'' + filename + '\')" style="font-size: 30px; padding: 10px; cursor: pointer; display: block;">Remove: ' + filename + '</a>';
+            document.body.appendChild(divElement);
+
+            document.getElementById('background_overlay').style.display = 'initial';
         }
-        else if (e.clientX || e.clientY) {
-            posx = e.clientX;
-            posy = e.clientY;
-        }
-
-
-        var divElement = document.createElement('div');
-        divElement.setAttribute('id', 'subject_remove_window');
-        divElement.setAttribute('style', 'left: ' + posx + 'px; top: ' + posy + 'px; min-height: 30px; max-width: 400px; background-color: white; border: 2px solid black; border-radius: 10px; position: absolute; z-index: 99999; overflow: hidden;');
-        divElement.innerHTML = '<a id="subject_remove" onclick="removeFile(\'' + filename + '\')" style="font-size: 30px; padding: 10px; cursor: pointer; display: block;">Remove: ' + filename + '</a>';
-        document.body.appendChild(divElement);
-
-        document.getElementById('background_overlay').style.display = 'initial';
     }
 
     function openClassSubject(subject, className) {
@@ -245,12 +252,15 @@
         return false;
     }
 
+    var subjectFiles;
     function openDir(subject, className, dir) {
         var inputElement = document.getElementById('subject_upload_path');
         inputElement.value = subject + '/' + (className.length > 0 ? className : undefined) + (dir.length > 0 ? dir : '');
         path = inputElement.value;
 
         $.getJSON(window.origin + '/json/subject/' + encodeURIComponent(subject + '/' + (className.length > 0 ? className : undefined) + (dir.length > 0 ? dir : '')), function (files) {
+            subjectFiles = files;
+
             var tableElemenet = document.getElementById('subject_fs_table');
 
             while (tableElemenet.children.length > 1) {
@@ -295,9 +305,7 @@
                 aNoteElement.setAttribute('style', 'cursor: pointer; color: black;');
 
                 if (file.note != undefined) {
-                    var jsonObject = JSON.stringify(file.note);
-
-                    aNoteElement.setAttribute('onclick', 'openNote(\'' + subject + '\', \'' + className + '\', \'' + dir + '\', \'' + dir + '/' + file.name + '\', \'' + jsonObject + '\')');
+                    aNoteElement.setAttribute('onclick', 'openNote(\'' + subject + '\', \'' + className + '\', \'' + dir + '\', \'' + dir + '/' + file.name + '\', \'' + file.name + '\')');
                     aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
                 } else {
                     if (subjectNoteAdd) {
@@ -318,6 +326,14 @@
                 document.getElementById('subject_fs_table').appendChild(trElement);
             }
         });
+    }
+
+    function getSubjectFile(filename) {
+        for (var i in subjectFiles) {
+            if (subjectFiles[i].name == filename) {
+                return subjectFiles[i];
+            }
+        }
     }
 
     function addSubjectFile() {
@@ -359,6 +375,8 @@
                 while (tableElemenet.children.length > 1) {
                     tableElemenet.removeChild(tableElemenet.lastChild);
                 }
+
+                document.getElementById('subject_goback_noperm').style.display = 'none';
             } else {
                 var subject = pathArgs[0];
                 var className = pathArgs[1];
@@ -375,26 +393,30 @@
         }
     }
 
-    function openNote(subject, className, dir, fileName, jsonString) {
-        var note = JSON.parse(jsonString);
+    function openNote(subject, className, dir, direction, fileName) {
+        var object = getSubjectFile(fileName);
 
-        var h3Element = document.getElementById('subject_note_open_window_file');
-        h3Element.innerHTML = 'Note of file: ' + fileName;
+        if (object != undefined) {
+            var note = object.note;
 
-        var h5Element = document.getElementById('subject_note_open_window_title');
-        h5Element.innerHTML = note.title;
+            var h3Element = document.getElementById('subject_note_open_window_file');
+            h3Element.innerHTML = 'Note of file: ' + direction;
 
-        var divElement = document.getElementById('subject_note_open_window_description');
-        divElement.innerHTML = note.description;
+            var h5Element = document.getElementById('subject_note_open_window_title');
+            h5Element.innerHTML = note.title;
 
-        var editButtonElement = document.getElementById('subject_note_open_window_edit');
-        editButtonElement.setAttribute('onclick', 'editNote(' + note.id + ', \'' + note.title + '\', \'' + note.description + '\', ' + note.public + ', \'' + subject + '/' + className + fileName + '\')');
+            var divElement = document.getElementById('subject_note_open_window_description');
+            divElement.innerHTML = note.description;
 
-        var removeButtonElement = document.getElementById('subject_note_open_window_remove');
-        removeButtonElement.setAttribute('onclick', 'deleteNote(' + note.id + ', \'' + subject + '\', \'' + className + '\', \'' + dir + '\')');
+            var editButtonElement = document.getElementById('subject_note_open_window_edit');
+            editButtonElement.setAttribute('onclick', 'editNote(\'' + object.name + '\', \'' + subject + '/' + className + direction + '\')');
 
-        document.getElementById('background_overlay').style.display = 'initial';
-        document.getElementById('subject_note_open_window').style.display = 'initial';
+            var removeButtonElement = document.getElementById('subject_note_open_window_remove');
+            removeButtonElement.setAttribute('onclick', 'deleteNote(' + note.id + ', \'' + subject + '\', \'' + className + '\', \'' + dir + '\')');
+
+            document.getElementById('background_overlay').style.display = 'initial';
+            document.getElementById('subject_note_open_window').style.display = 'initial';
+        }
     }
 
     function deleteNote(id, subject, className, dir) {
@@ -417,20 +439,26 @@
         document.getElementById('subject_note_add_window').style.display = 'initial';
     }
 
-    function editNote(id, title, description, visible, path) {
-        clearAddNote();
-        closePopup();
-        document.getElementById('subject-note-add-path').value = path;
+    function editNote(fileName, path) {
+        var object = getSubjectFile(fileName);
 
-        document.getElementById('subject-note-add-id').value = id;
-        document.getElementById('subject-note-add-title').value = title;
-        document.getElementById('subject-note-add-description').value = description;
-        if (visible) {
-            document.getElementById('subject-note-add-checkbox').setAttribute('checked', '');
+        if (object != undefined) {
+            var note = object.note;
+
+            clearAddNote();
+            closePopup();
+            document.getElementById('subject-note-add-path').value = path;
+
+            document.getElementById('subject-note-add-id').value = note.id;
+            document.getElementById('subject-note-add-title').value = note.title;
+            document.getElementById('subject-note-add-description').innerHTML = note.description;
+            if (note.visible) {
+                document.getElementById('subject-note-add-checkbox').setAttribute('checked', '');
+            }
+
+            document.getElementById('background_overlay').style.display = 'initial';
+            document.getElementById('subject_note_add_window').style.display = 'initial';
         }
-
-        document.getElementById('background_overlay').style.display = 'initial';
-        document.getElementById('subject_note_add_window').style.display = 'initial';
     }
 
     function changeVisability(element, path) {

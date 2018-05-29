@@ -97,10 +97,6 @@
             var notTheTeacherPerms;
             var from = 0;
             window.onload = function () {
-                $.getJSON(window.origin + '/json/news/0&2', function (data) {
-                    addNewsElements(data);
-                });
-
                 var itemOptionPerms = ['agenda.additem.note', 'agenda.additem.test', 'agenda.additem.task', 'agenda.additem.preparation', 'agenda.additem.materials', 'agenda.additem.topic'];
                 for (var index in itemOptionPerms) {
                     !function outer(index) {
@@ -218,60 +214,9 @@
                 formElement.submit();
             }
 
-            function openArticleEditor(id, title, description) {
-                var mainElement = document.getElementById('news_editor');
-                mainElement.style.display = 'block';
-
-                var titleElement = document.getElementById('news_edit_title');
-                titleElement.value = title;
-
-                var descriptionElement = document.getElementById('news_edit_content');
-                descriptionElement.innerHTML = description;
-
-                var articleIdElement = document.getElementById('news_edit_id');
-                articleIdElement.value = id;
-            }
-
             function updateArticle() {
                 document.getElementById('news_edit_description').value = document.getElementById('news_edit_content').innerHTML;
                 document.getElementById('news_edit_form').submit();
-            }
-
-            function addNewsElements(data) {
-                for (var index in data) {
-                    var newsElement = document.getElementById('news_articles');
-
-                    var divElement = document.createElement('div');
-                    divElement.setAttribute('class', 'article');
-                    divElement.setAttribute('id', 'article_' + data[index].id);
-                    divElement.innerHTML = '<p style="font-size: 18px">' + data[index].title + '</p><div>' + data[index].description + '</div><p style="text-align: right; font-size: 10px">' + data[index].date + '</p>';
-
-                    newsElement.insertBefore(divElement, document.getElementById('load_more_articles_button'));
-                }
-
-                hasPermission('news.edit', function (result) {
-                    if (result) {
-                        for (var index in data) {
-                            var buttonElement = document.createElement('button');
-                            buttonElement.setAttribute('style', 'background-color: orange; border: none; padding: 5px; color: white;');
-                            buttonElement.setAttribute('onclick', 'openArticleEditor(' + data[index].id + ', \'' + data[index].title + '\', \'' + data[index].description + '\')');
-                            buttonElement.innerHTML = 'Edit article';
-                            document.getElementById('article_' + data[index].id).appendChild(buttonElement);
-                        }
-                    }
-                });
-
-                hasPermission('news.remove', function (result) {
-                    if (result) {
-                        for (var index in data) {
-                            var buttonElement = document.createElement('button');
-                            buttonElement.setAttribute('style', 'background-color: red; border: none; padding: 5px; color: white;');
-                            buttonElement.setAttribute('onclick', 'removeArticle(' + data[index].id + ')');
-                            buttonElement.innerHTML = 'Remove article';
-                            document.getElementById('article_' + data[index].id).appendChild(buttonElement);
-                        }
-                    }
-                });
             }
 
             function loadMoreNews() {
@@ -321,8 +266,8 @@
                     document.getElementById('mail_concept_question_window').style.display = 'none';
                 } else if (document.getElementById('mail_attachment_window').style.display != 'none') {
                     document.getElementById('mail_attachment_window').style.display = 'none';
-                } else if (document.getElementById('subject_remove_window').style.display != 'none') {
-                    document.body.removeChild(document.getElementById('subject_remove_window'));
+                } else if (document.getElementById('news_item_edit_window').style.display != 'none') {
+                    document.getElementById('news_item_edit_window').style.display = 'none';
                 }
             }
 
@@ -523,6 +468,28 @@
             </div>
         </div>
 
+        <div id="news_item_edit_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div id="News editor" style="padding: 0 5% 3% 5%;">
+                    <h3>News editor</h3>
+
+                    <form method="POST" action="">
+                        <input type="text" name="id" id="news-edit-id" style="display: none;">
+
+                        <input type="text" autocomplete="OFF" name="title" id="news-edit-title" style="background-color: #1A2226; outline: 0; padding: 5px; border: 1px solid black; width: 50%; color: white; margin-bottom: 1%;" placeholder="Title"><br>
+
+                        <div id="news-edit-textbox" style="margin-bottom: 1%;">
+                            <script>
+                                generateEditor(document.getElementById('news-edit-textbox'), 'news-edit-description', 'news-edit-content', 'description')
+                            </script>
+                        </div>
+
+                        <button onclick="submitNewsEdit()" style="background-color: #1A2226; border: 1px solid black; padding: 5px; width: 50%; outline: 0; color: white;">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <div id="agenda_items_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
             <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
                 <div id="agenda_items" style="padding: 0 5% 3% 5%;">
@@ -591,7 +558,7 @@
 
                     <form id="subject_folder_form" method="POST" action="/panel/addfolder">
                         <input type="text" id="subject_folder_path" name="path" style="display: none;">
-                        <input type="text" id="subject_folder_name" name="directory">
+                        <input type="text" id="subject_folder_name" name="folder">
 
                         <input onclick="addFolderFormSubmit()" type="submit">
                     </form>
@@ -635,10 +602,19 @@
                     <form method="POST" action="/panel/addnote">
                         <input type="text" name="path" id="subject-note-add-path" style="display: none;">
                         <input type="text" name="id" id="subject-note-add-id" style="display: none;">
-                        <input type="text" name="title" id="subject-note-add-title" placeholder="Title"><br>
-                        <input type="text" name="description" id="subject-note-add-description" placeholder="Description"><br>
+
+                        <input type="text" autocomplete="OFF" name="title" id="subject-note-add-title" style="background-color: #1A2226; outline: 0; padding: 5px; border: 1px solid black; width: 50%; color: white; margin-bottom: 1%;" placeholder="Title"><br>
+
+                        <div id="subject-note-add-textbox">
+                            <script>
+                                generateEditor(document.getElementById('subject-note-add-textbox'), 'subject-note-add-description', 'subject-note-add-content', 'description')
+                            </script>
+                        </div>
+                        <!--<input type="text" name="description" id="subject-note-add-description" placeholder="Description">--><br>
+
                         <input type="checkbox" id="subject-note-add-checkbox" name="public"><br>
-                        <input type="submit"><br>
+
+                        <input type="submit" onclick="setupAddNoteForm(this)" style="color: white; border: 1px solid black; background-color: #1A2226; outline: 0; padding: 5px; width: 50%;"><br>
                     </form>
                 </div>
             </div>
@@ -691,17 +667,27 @@
                 if (pageArgs[0] == 'subject') {
                     changeModule('subject');
 
-                    var path = '';
-                    for (var i in pageArgs) {
-                        if (i > 2) {
-                            path += '/' + pageArgs[i];
+                    if (pageArgs.length > 1) {
+                        var path = '';
+                        for (var i in pageArgs) {
+                            if (i > 2) {
+                                path += '/' + pageArgs[i];
+                            }
                         }
-                    }
 
-                    toDirectory(pageArgs[1], pageArgs[2], path);
+                        toDirectory(pageArgs[1], pageArgs[2], path);
+                    } else {
+                        changeModule(pageArgs[0]);
+                    }
                 } else {
                     changeModule(page);
                 }
+            }
+
+            function setupAddNoteForm(element) {
+                document.getElementById('subject-note-add-content').value = document.getElementById('subject-note-add-description').innerHTML;
+
+                element.submit();
             }
 
             function showUploadMenu() {
