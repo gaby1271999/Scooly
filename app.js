@@ -46,7 +46,7 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({ limit: '10G' }))
 app.use(fileUpload({
-    limits: { fileSize: 1024 * 1024 * 1024 * 1024 },
+    limits: { fileSize: 50 * 1024 * 1024 },
 }));
 app.use(logger('dev'));
 app.use(cookieParser());

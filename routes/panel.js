@@ -72,32 +72,14 @@ router.get('/:page?', function(req, res) {
     }
 });
 
-router.post('/addnews', function (req, res) {
+router.get('/removenews/:article_id', function (req, res) {
     if (req.session && req.session.user_id) {
-        database.getGroup(req.session.user_id, function (groupName) {
-            permission.hasPermission(groupName, "news.add", function (result) {
-                if (result) {
-                    if (req.body.title.length <= 30) {
-                        database.addNewsArticle(req.body.title, req.body.description, function (result) {
-                            res.redirect('/panel')
-                        });
-                    }
-                }
-            });
-        });
-    }
-});
-
-router.post('/removenews', function (req, res) {
-    if (req.session && req.session.user_id) {
-        database.getGroup(req.session.user_id, function (groupName) {
-            permission.hasPermission(groupName, "news.remove", function (result) {
-                if (result) {
-                    database.removeNewsArticle(req.body.article_id, function (result) {
-                        res.redirect('/panel')
-                    });
-                }
-            });
+        permission.hasPermission(req.session.user_id, "news.remove", function (result) {
+            if (result) {
+                database.removeNewsArticle(req.params.article_id, function (result) {
+                    res.end('success');
+                });
+            }
         });
     }
 });
@@ -105,15 +87,30 @@ router.post('/removenews', function (req, res) {
 router.post('/editnews', function (req, res) {
     if (req.session && req.session.user_id) {
         permission.hasPermission(req.session.user_id, "news.edit", function (result) {
-            if (result) {
-                console.log(req.body);
+            console.log(req.body)
+            console.log(req.body.groups)
+            console.log(JSON.parse(req.body.groups))
 
-                /*
-                if (req.body.title.length <= 30) {
-                    database.updateNewsArticle(req.body.article_id, req.body.title, req.body.description, function (result) {
-                        res.redirect('/panel')
-                    });
-                }*/
+            if (result) {
+                if (req.body.title != undefined) {
+                    if (req.body.title.length <= 30) {
+                        if (req.body.id != undefined) {
+                            if (req.body.id.length > 0) {
+                                database.updateNewsArticle(req.body.id, req.body.title, req.body.description, JSON.parse(req.body.groups), function (result) {
+                                    res.end('success');
+                                });
+                            } else {
+                                database.addNewsArticle(req.body.title, req.body.description, JSON.parse(req.body.groups), function (result) {
+                                    res.end('success');
+                                });
+                            }
+                        } else {
+                            database.addNewsArticle(req.body.title, req.body.description, JSON.parse(req.body.groups), function (result) {
+                                res.end('success');
+                            });
+                        }
+                    }
+                }
             }
         });
     }

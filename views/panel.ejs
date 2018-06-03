@@ -70,6 +70,35 @@
                 border: 2px solid black;
                 padding: 8px;
             }
+
+            .news-edit-dropdown-items {
+                display: block;
+                padding: 5px;
+                border-bottom: 1px solid black;
+                color: white;
+
+            }
+
+            .news-edit-dropdown-items:hover {
+                background-color: wheat;
+                color: black;
+                transition: 1s;
+            }
+
+            .cansee-group {
+                padding: 5px;
+                color: white;
+                background-color: mediumseagreen;
+                border: 1px solid black;
+                margin-right: 5px;
+                cursor: pointer;
+            }
+
+            .cansee-group:hover {
+                background-color: indianred;
+                color: white;
+                transition: 1s;
+            }
         </style>
 
         <script>
@@ -195,36 +224,6 @@
             function logout() {
                 window.location = window.origin + "/logout";
             }
-
-            function postArticle() {
-                document.getElementById('news_description_content').value = document.getElementById('news_content').innerHTML;
-                document.getElementById('news_add_form').submit();
-            }
-
-            function removeArticle(id) {
-                var formElement = document.getElementById('news_remove_form');
-
-                var inputElement = document.createElement('input');
-                inputElement.setAttribute('type', 'text');
-                inputElement.setAttribute('name', 'article_id');
-                inputElement.setAttribute('value', id);
-                inputElement.setAttribute('style', 'display: none;');
-
-                formElement.appendChild(inputElement);
-                formElement.submit();
-            }
-
-            function updateArticle() {
-                document.getElementById('news_edit_description').value = document.getElementById('news_edit_content').innerHTML;
-                document.getElementById('news_edit_form').submit();
-            }
-
-            function loadMoreNews() {
-                from += 3;
-                $.getJSON(window.origin + '/json/news/' + from + '&' + (from + 2), function (data) {
-                    addNewsElements(data);
-                });
-            }
             
             function openAdminPannel() {
                 window.location = window.origin + '/admin';
@@ -268,6 +267,10 @@
                     document.getElementById('mail_attachment_window').style.display = 'none';
                 } else if (document.getElementById('news_item_edit_window').style.display != 'none') {
                     document.getElementById('news_item_edit_window').style.display = 'none';
+                } else if (document.getElementById('mydocuments_folder_window').style.display != 'none') {
+                    document.getElementById('mydocuments_folder_window').style.display = 'none';
+                } else if (document.getElementById('mydocuments_upload_window').style.display != 'none') {
+                    document.getElementById('mydocuments_upload_window').style.display = 'none';
                 }
             }
 
@@ -332,7 +335,62 @@
                         document.getElementById('language-popup').parentNode.removeChild(document.getElementById('language-popup'));
                     }
                 }
+
+                if (document.getElementById('news-edit-dropdown-menu') != undefined) {
+                    if (e.target.id != 'news-edit-dropdown-menu' && e.target.id != 'news-edit-dropdown-menu') {
+                        document.getElementById('news-edit-dropdown-menu').parentNode.removeChild(document.getElementById('news-edit-dropdown-menu'));
+                    }
+                }
             }, false);
+
+            function showGroups(element) {
+                if (element.value.length > 0) {
+                    $.getJSON(window.origin + '/json/getgroups/' + element.value, function (data) {
+                        if (document.getElementById('news-edit-dropdown-menu') != undefined) {
+                            document.getElementById('news-edit-dropdown-menu').parentNode.removeChild(document.getElementById('news-edit-dropdown-menu'));
+                        }
+
+                        var divElement = document.createElement('div');
+                        divElement.setAttribute('id', 'news-edit-dropdown-menu')
+                        divElement.setAttribute('style', 'position: absolute; width: 50%; background-color: mediumseagreen; border: 1px solid black; border-bottom: none;');
+
+                        for (var index in data) {
+                            var aElement = document.createElement('a');
+                            aElement.setAttribute('class', 'news-edit-dropdown-items');
+                            aElement.setAttribute('onclick', 'selectCanSee(this)');
+                            aElement.innerHTML = data[index];
+                            divElement.appendChild(aElement);
+                        }
+                        element.parentNode.appendChild(divElement);
+                    });
+                } else {
+                    document.getElementById('news-edit-dropdown-menu').parentNode.removeChild(document.getElementById('news-edit-dropdown-menu'));
+                }
+            }
+
+            function selectCanSee(element) {
+                document.getElementById('news-edit-dropdown-menu').parentNode.removeChild(document.getElementById('news-edit-dropdown-menu'));
+                document.getElementById('news-edit-dropdown-field').value = '';
+
+                var groupsElement = document.getElementById('news-edit-added-groups');
+
+                for (var index in groupsElement.children) {
+                    if (groupsElement.children[index].innerHTML == element.innerHTML) {
+                        return;
+                    }
+                }
+
+                var aElement = document.createElement('a');
+                aElement.setAttribute('class', 'cansee-group');
+                aElement.setAttribute('onclick', 'removeCanSeeGroup(this)');
+                aElement.innerHTML = element.innerHTML;
+
+                groupsElement.appendChild(aElement);
+            }
+
+            function removeCanSeeGroup(element) {
+                element.parentNode.removeChild(element);
+            }
         </script>
     </header>
 
@@ -439,8 +497,7 @@
                     </li>
 
                     <li class="menu-item">
-                        <!--<a onclick="changeModule('mydocuments')"><img class="menu_img" src="/images/icons/document_icon.png"><%= object.documents %></a>--->
-                        <a onclick=""><img class="menu_img" src="/images/icons/document_icon.png"><%= object.documents %></a>
+                        <a onclick="changeModule('mydocuments')"><img class="menu_img" src="/images/icons/document_icon.png"><%= object.documents %></a>
                     </li>
 
                     <li id="admin_page_button" class="menu-item" style="display: none;">
@@ -473,19 +530,28 @@
                 <div id="News editor" style="padding: 0 5% 3% 5%;">
                     <h3>News editor</h3>
 
-                    <form method="POST" action="">
-                        <input type="text" name="id" id="news-edit-id" style="display: none;">
+                    <input type="text" id="news-edit-id" style="display: none;">
 
-                        <input type="text" autocomplete="OFF" name="title" id="news-edit-title" style="background-color: #1A2226; outline: 0; padding: 5px; border: 1px solid black; width: 50%; color: white; margin-bottom: 1%;" placeholder="Title"><br>
+                    <input type="text" autocomplete="OFF" id="news-edit-title" style="background-color: #1A2226; outline: 0; padding: 5px; border: 1px solid black; width: 50%; color: white; margin-bottom: 1%;" placeholder="Title"><br>
 
-                        <div id="news-edit-textbox" style="margin-bottom: 1%;">
-                            <script>
-                                generateEditor(document.getElementById('news-edit-textbox'), 'news-edit-description', 'news-edit-content', 'description')
-                            </script>
+                    <div id="news-edit-textbox" style="margin-bottom: 1%;">
+                        <script>
+                            generateEditor(document.getElementById('news-edit-textbox'), 'news-edit-description', 'news-edit-content', 'description')
+                        </script>
+                    </div>
+
+
+                    <div style="margin-bottom: 1%;">
+                        <div id="news-edit-added-groups" style="margin-bottom: 1%;">
+
                         </div>
 
-                        <button onclick="submitNewsEdit()" style="background-color: #1A2226; border: 1px solid black; padding: 5px; width: 50%; outline: 0; color: white;">Submit</button>
-                    </form>
+                        <div id="news-edit-dropdown" style="position: relative;">
+                            <input id="news-edit-dropdown-field" type="text" oninput="showGroups(this)" style="background-color: #1A2226; outline: 0; padding: 5px; border: 1px solid black; width: 50%; color: white;" placeholder="Can see">
+                        </div>
+                    </div>
+
+                    <button onclick="submitEditArticle()" style="background-color: #1A2226; border: 1px solid black; padding: 5px; width: 50%; outline: 0; color: white;">Submit</button>
                 </div>
             </div>
         </div>
@@ -694,6 +760,10 @@
                 $('#mail-upload-input').click();
             }
 
+            function showMyUploadMenu() {
+                $('#mydocuments-upload-input').click();
+            }
+
             function updateMailAttachment(element) {
                 var files = element.files;
 
@@ -766,5 +836,40 @@
                 });
             }
         </script>
+
+        <div id="mydocuments_folder_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div style="margin: 1% 3% 1% 3%;">
+                    <h3>Add folder</h3>
+
+                    <input id="mydocuments-folder-input" type="text" style="border: 1px solid black; outline: 0; padding: 5px; width: 50%; margin-bottom: 1%;" placeholder="Folder name">
+
+                    <button onclick="submitAddFolder()" style="outline: 0; border: 2px solid black; background-color: #0e90d2; color: white; padding: 5px; width: 50%;">Submit</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mydocuments_upload_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
+            <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
+                <div style="margin: 1% 3% 1% 3%;">
+                    <h3>Upload file</h3>
+
+                    <div style="margin: 5%;">
+                        <p id="mydocuments-upload-progress-text" style="text-align: center">Progress 0%</p>
+                        <div style="width: 100%; height: 10px; border-radius: 5px; border: 2px solid black;">
+                            <div id="mydocuments-upload-progress-bar" style="width: 0; height: 100%; background-color: #0e90d2;"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="showMyUploadMenu()" style="outline: 0; border: 2px solid black; background-color: #0e90d2; color: white; border-radius: 25px; padding: 5px 15px 5px 15px;">Add file</button>
+
+                    <input id="mydocuments-upload-input" onchange="submitMyFile(this)" type="file" style="display: none;" multiple="multiple">
+
+                    <ul id="mydocuments-upload-files" style="text-decoration: none; list-style-type: none;">
+
+                    </ul>
+                </div>
+            </div>
+        </div>
     </body>
 </html>

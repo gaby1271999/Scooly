@@ -1,4 +1,212 @@
 <div class="module" id="mydocuments" style="background-color: white; border-radius: 10px; margin: 3% 3% 0 3%; min-height: 200px; overflow: hidden; display: none">
     <div style="height: 5px; background-color: #00A65A;"></div>
     <p style="margin: 1% 0 0 3%; font-size: 25px"><%= object.schoolschedule %></p>
+
+    <div style="margin: 1% 3% 0 3%;">
+        <div id="mydocuments_menu">
+            <ul>
+                <li>
+                    <a onclick="mydocumentsGoBack()">Go back</a>
+                </li>
+
+                <li>
+                    <a onclick="openAddFolderWindow()">Add folder</a>
+                </li>
+
+                <li>
+                    <a onclick="openUploadWindow()">upload file</a>
+                </li>
+            </ul>
+        </div>
+
+        <table id="mydocuments_table" style="width: 100%; border: 1px solid black;">
+            <tr style="border: 1px solid black; background-color: #00A65A;">
+                <th style="width: 80%; padding-left: 10px; border-right: 1px solid black;">File name</th>
+                <th style="padding-left: 10px;">size</th>
+            </tr>
+
+            <script>
+                window.onload = function () {
+                    openMyDocuments('');
+                }
+            </script>
+        </table>
+    </div>
 </div>
+
+<style>
+    #mydocuments_table {
+        border-collapse: collapse;
+        margin-top: 1%;
+    }
+
+    #mydocuments_table tr {
+        border-collapse: collapse;
+    }
+
+    #mydocuments_menu ul {
+        border-right: 0;
+        text-decoration: none;
+        list-style-type: none;
+        width: 100%;
+        display: flex;
+    }
+
+    #mydocuments_menu ul li {
+        border-collapse: collapse;
+        border: 1px solid black;
+        border-right: 0;
+        display: inline-block;
+        width: 33.33%;
+        text-align: center;
+    }
+
+    #mydocuments_menu ul li:last-child {
+        border-right: 1px solid black;
+    }
+
+    #mydocuments_menu ul li a {
+        cursor: pointer;
+        display: block;
+        padding: 5px;
+        color: white;
+        background-color: #00A65A;
+    }
+
+    #mydocuments_menu ul li a:hover {
+        background-color: #5bb75b;
+        color: black;
+        transition: 1s;
+    }
+</style>
+
+<script>
+    var mydocumentsDirection;
+
+    function openMyDocuments(dir) {
+        mydocumentsDirection = dir;
+
+        var tableElement = document.getElementById('mydocuments_table');
+
+        while (tableElement.children.length > 1) {
+            tableElement.removeChild(tableElement.lastChild);
+        }
+
+        $.getJSON(window.origin + '/json/getdocuments/' + encodeURIComponent(dir), function (files) {
+            for (var index in files) {
+                var trElement = document.createElement('tr');
+
+                var td1Element = document.createElement('td');
+                var aElement = document.createElement('a');
+                aElement.setAttribute('style', 'cursor: pointer; display: block; color: black; padding-left: 5px;');
+
+                var url = getFileIcon(files[index].filename, files[index].type == 0 ? true : false);
+                aElement.innerHTML = '<img style="width: 15px; height: auto; margin-right: 5px;" src="' + url + '">' + files[index].filename;
+
+                if (files[index].type == 0) {
+                    aElement.setAttribute('onclick', 'openMyDocuments(\'' + dir + '/' + files[index].filename + '\')');
+                } else {
+                    aElement.setAttribute('href', window.origin + '/download/mydocument/' + encodeURIComponent(dir + '/' + files[index].filename));
+                }
+                td1Element.appendChild(aElement);
+                trElement.appendChild(td1Element);
+
+                var td2Element = document.createElement('td');
+                td2Element.setAttribute('style', 'padding-left: 5px;');
+                td2Element.innerHTML = files[index].size;
+                trElement.appendChild(td2Element);
+
+                tableElement.appendChild(trElement);
+            }
+        });
+    }
+
+    function openAddFolderWindow() {
+        document.getElementById('mydocuments-folder-input').value = '';
+
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('mydocuments_folder_window').style.display = 'initial';
+    }
+
+    function openUploadWindow() {
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('mydocuments_upload_window').style.display = 'initial';
+    }
+
+    function submitAddFolder() {
+        var folder = document.getElementById('mydocuments-folder-input').value;
+
+        $.ajax({
+           url: window.origin + '/json/mydocuments/addfolder/' + encodeURIComponent(mydocumentsDirection + '/' + folder),
+           type: 'GET',
+           success: function () {
+               closePopup();
+
+               openMyDocuments(mydocumentsDirection + '/' + folder);
+           }
+        });
+    }
+
+    function submitMyFile(element) {
+        var files = element.files;
+
+        if (files.length > 0) {
+            var formData = new FormData();
+
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+
+                formData.append('uploads', file, file.name);
+            }
+
+            $.ajax({
+                url: window.origin + '/json/mydocuments/addfile/' + encodeURIComponent(mydocumentsDirection),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(){
+                    closePopup();
+
+                    openMyDocuments(mydocumentsDirection);
+                },
+                xhr: function() {
+                    var xhr = new XMLHttpRequest();
+
+                    xhr.upload.addEventListener('progress', function(evt) {
+                        if (evt.lengthComputable) {
+                            var percentComplete = evt.loaded / evt.total;
+                            percentComplete = parseInt(percentComplete * 100);
+
+                            document.getElementById('mydocuments-upload-progress-text').innerHTML = 'Progress ' + percentComplete + '%';
+                            document.getElementById('mydocuments-upload-progress-bar').style.width = percentComplete + '%';
+
+                            if (percentComplete === 100) {
+                                document.getElementById('mydocuments-upload-progress-text').innerHTML = 'Done';
+                            }
+                        }
+                    }, false);
+
+                    return xhr;
+                }
+            });
+        }
+    }
+
+    function mydocumentsGoBack() {
+        var args = mydocumentsDirection.split('/');
+
+        if (args.length > 1) {
+            var dir = '';
+            for (var index in args) {
+                if (index > 0 && index < (args.length -1)) {
+                    dir += '/' + args[index];
+                }
+            }
+
+            openMyDocuments(dir);
+        } else {
+            openMyDocuments('');
+        }
+    }
+</script>

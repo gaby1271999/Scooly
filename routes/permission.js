@@ -262,4 +262,5 @@ exports.hasPermission = hasPermission;
 exports.isExistingGroup = isExistingGroup;
 exports.groups = groups;
 exports.getAllGroups = getAllGroups;
+exports.getParents = getParents;
 

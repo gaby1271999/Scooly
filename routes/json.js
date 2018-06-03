@@ -1,10 +1,13 @@
 var express = require('express');
+var fs = require('fs');
+var async = require('async');
 
 var news = require('./modules/news_module');
 var messageManager = require('./modules/message_module');
 var agendaManager = require('./modules/agenda_module');
 var subjectManager = require('./modules/subject_module');
 var classUtils = require('./modules/class_utils');
+var mydocumentsManager = require('./modules/mydocuments_module');
 var database = require('./database');
 var permissionManager = require('./permission');
 
@@ -28,7 +31,7 @@ router.get('/login/:username&:password', function(req, res) {
 
 router.get('/news/:from&:to', function(req, res) {
     if (req.session && req.session.user_id) {
-        news.getNews(req.params.from, req.params.to, function (news) {
+        news.getNews(req.session.user_id, req.params.from, req.params.to, function (news) {
             res.setHeader('Content-type', 'application/json');
             res.send(JSON.stringify(news));
         });
@@ -346,6 +349,55 @@ router.get('/getuserinformation/:username', function (req, res) {
                 res.send(JSON.stringify(information));
             });
         });
+    }
+});
+
+router.get('/getdocuments/:dir?', function (req, res) {
+    if (req.session && req.session.user_id) {
+        mydocumentsManager.getDocuments(req.session.user_id, (req.params.dir == undefined ? '' : req.params.dir), function (files) {
+            res.setHeader('Content-type', 'application/json');
+            res.send(JSON.stringify(files));
+        });
+    }
+});
+
+router.get('/mydocuments/addfolder/:dir?', function (req, res) {
+    if (req.session && req.session.user_id) {
+        console.log(req.params.dir == undefined ? '' : req.params.dir)
+
+        mydocumentsManager.addFolder(req.session.user_id, (req.params.dir == undefined ? '' : req.params.dir), function () {
+            res.end('success');
+        });
+    }
+});
+
+var direction = __dirname.replace('routes', 'private/mydocuments');
+router.post('/mydocuments/addfile/:dir?', function (req, res) {
+    if (req.session && req.session.user_id) {
+        if (!fs.existsSync(direction + '/' + req.session.user_id)) {
+            fs.mkdirSync(direction + '/' + req.session.user_id);
+        }
+
+        var list = [];
+
+        if (!Array.isArray(req.files.uploads)) {
+            list[list.length] = req.files.uploads;
+        } else {
+            list = req.files.uploads;
+        }
+
+        if (!fs.existsSync(direction + '/' + req.session.user_id + (req.params.dir == undefined ? '' : req.params.dir))) {
+            console.log('sdf')
+            res.end();
+        } else {
+            async.each(list, function (file, cb) {
+                file.mv(direction + '/' + req.session.user_id + (req.params.dir == undefined ? '' : req.params.dir) + '/' + file.name, function (err) {
+                    cb();
+                });
+            }, function () {
+                res.end();
+            });
+        }
     }
 });
 

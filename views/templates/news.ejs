@@ -30,7 +30,10 @@
             });
 
         </script>
-        <button id="load_more_articles_button" onclick="loadMoreNews()" style=" border: none; background-color: #2F2F2F; color: white; padding: 5px; margin: 1% 50% 0 50%;">LoadMore</button>
+
+        <div id="load_more_articles_button" style="text-align: center;">
+            <button onclick="loadMoreNews()" style="border: none; background-color: #2F2F2F; color: white; padding: 5px; width: 50%; text-align: center; margin-top: 2.5%; outline: 0;">LoadMore</button>
+        </div>
     </div>
 </div>
 
@@ -48,6 +51,15 @@
 
             var descriptionElement = document.getElementById('news-edit-description');
             descriptionElement.innerHTML = object.description;
+
+            var groupsElement = document.getElementById('news-edit-added-groups');
+            for (var index in object.groups) {
+                var aElement = document.createElement('a');
+                aElement.setAttribute('class', 'cansee-group');
+                aElement.setAttribute('onclick', 'removeCanSeeGroup(this)');
+                aElement.innerHTML = object.groups[index];
+                groupsElement.appendChild(aElement);
+            }
 
             document.getElementById('background_overlay').style.display = 'initial';
             document.getElementById('news_item_edit_window').style.display = 'initial';
@@ -69,6 +81,13 @@
 
         var descriptionElement = document.getElementById('news-edit-description');
         descriptionElement.innerHTML = '';
+
+        var groupsElement = document.getElementById('news-edit-added-groups');
+        while (groupsElement.firstChild) {
+            groupsElement.removeChild(groupsElement.firstChild);
+        }
+
+        document.getElementById('news-edit-dropdown-field').value = '';
     }
 
     function getNewsArticle(id) {
@@ -91,39 +110,121 @@
             divElement.setAttribute('id', 'article_' + data[index].id);
             divElement.innerHTML = '<p style="font-size: 18px">' + data[index].title + '</p><div>' + data[index].description + '</div><p style="text-align: right; font-size: 10px">' + data[index].date + '</p>';
 
+            var editButtonElement = document.createElement('button');
+            editButtonElement.setAttribute('class', 'news_edit_buttons');
+            editButtonElement.setAttribute('style', 'background-color: orange; border: none; padding: 5px; color: white; display: none; margin-right: 2.5%;');
+            editButtonElement.setAttribute('onclick', 'openArticleEditor(' + data[index].id + ')');
+            editButtonElement.innerHTML = 'Edit article';
+
+            divElement.appendChild(editButtonElement);
+
+            var deleteButtonElement = document.createElement('button');
+            deleteButtonElement.setAttribute('class', 'news_delete_buttons');
+            deleteButtonElement.setAttribute('style', 'background-color: red; border: none; padding: 5px; color: white; display: none;');
+            deleteButtonElement.setAttribute('onclick', 'removeArticle(' + data[index].id + ')');
+            deleteButtonElement.innerHTML = 'Remove article';
+
+            divElement.appendChild(deleteButtonElement);
+
             newsElement.insertBefore(divElement, document.getElementById('load_more_articles_button'));
         }
 
-        console.log(newsArticles)
-
         hasPermission('news.edit', function (result) {
             if (result) {
-                for (var index in data) {
-                    var buttonElement = document.createElement('button');
-                    buttonElement.setAttribute('style', 'background-color: orange; border: none; padding: 5px; color: white;');
-                    buttonElement.setAttribute('onclick', 'openArticleEditor(' + data[index].id + ')');
-                    buttonElement.innerHTML = 'Edit article';
-                    document.getElementById('article_' + data[index].id).appendChild(buttonElement);
+                var elements = document.getElementsByClassName('news_edit_buttons');
+
+                for (var index in elements) {
+                    if (elements[index].style != undefined) {
+                        elements[index].style.display = 'initial';
+                    }
                 }
             }
         });
 
         hasPermission('news.remove', function (result) {
             if (result) {
-                for (var index in data) {
-                    var buttonElement = document.createElement('button');
-                    buttonElement.setAttribute('style', 'background-color: red; border: none; padding: 5px; color: white;');
-                    buttonElement.setAttribute('onclick', 'removeArticle(' + data[index].id + ')');
-                    buttonElement.innerHTML = 'Remove article';
-                    document.getElementById('article_' + data[index].id).appendChild(buttonElement);
+                var elements = document.getElementsByClassName('news_delete_buttons');
+
+                for (var index in elements) {
+                    if (elements[index].style != undefined) {
+                        elements[index].style.display = 'initial';
+                    }
                 }
             }
         });
     }
 
-    function submitNewsEdit(element) {
-        document.getElementById('news-edit-content').value = document.getElementById('news-edit-description').innerHTML;
+    function removeArticle(article_id) {
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('loader_window').style.display = 'initial';
 
-        element.parentNode.submit();
+        $.ajax({
+            url: '/panel/removenews/' + article_id,
+            type: 'GET',
+            success: function (result) {
+                resetArticles(function () {
+                    document.getElementById('background_overlay').style.display = 'none';
+                    document.getElementById('loader_window').style.display = 'none';
+                });
+            }
+        })
+    }
+
+    function submitEditArticle() {
+        closePopup();
+
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('loader_window').style.display = 'initial';
+
+        var id = document.getElementById('news-edit-id').value;
+        var title = document.getElementById('news-edit-title').value;
+        var description = document.getElementById('news-edit-description').innerHTML;
+
+        var groupsElement = document.getElementById('news-edit-added-groups');
+        var groups = [];
+        for (var index in groupsElement.children) {
+            if (groupsElement.children[index].innerHTML != undefined) {
+                groups[groups.length] = groupsElement.children[index].innerHTML;
+            }
+        }
+
+        $.ajax({
+            url: window.origin + '/panel/editnews',
+            type: 'POST',
+            data: {
+                id: id,
+                title: title,
+                description: description,
+                groups: JSON.stringify(groups)
+            },
+            success: function () {
+                resetArticles(function () {
+                    document.getElementById('background_overlay').style.display = 'none';
+                    document.getElementById('loader_window').style.display = 'none';
+                });
+            }
+        });
+    }
+
+    function loadMoreNews() {
+        from += 3;
+        $.getJSON(window.origin + '/json/news/' + from + '&' + (from + 2), function (data) {
+            addNewsElements(data);
+        });
+    }
+
+    function resetArticles(callback) {
+        while (document.getElementById('news_articles').children.length > 1) {
+            document.getElementById('news_articles').removeChild(document.getElementById('news_articles').firstChild);
+        }
+
+        newsArticles = [];
+        from = 0;
+
+        $.getJSON(window.origin + '/json/news/' + from + '&' + (from + 2), function (data) {
+            addNewsElements(data);
+
+            callback();
+        });
     }
 </script>

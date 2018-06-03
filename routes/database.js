@@ -433,11 +433,19 @@ function removeUser(username, callback) {
     });
 }
 
-function addNewsArticle(title, description, callback) {
+function addNewsArticle(title, description, groups, callback) {
     var sql = "INSERT INTO news(title, description, date) VALUES(" + connection.escape(title) + ", " + connection.escape(description) + ", NOW());";
-    connection.query(sql, function (error) {
-        if (error) {
-            return callback(false);
+    connection.query(sql, function (error, result) {
+        if (!error) {
+            async.each(groups, function (group, cb) {
+               var sqlAddGroup = "INSERT INTO news_cansee(news_id, group_name) VALUES(?, ?);";
+
+               connection.query(sqlAddGroup, [result.insertId, group], function (error, result) {
+                   cb();
+               });
+            }, function () {
+                return callback(false);
+            });
         } else {
             return callback(true);
         }
@@ -447,19 +455,88 @@ function addNewsArticle(title, description, callback) {
 function removeNewsArticle(id, callback) {
     var sql = "DELETE FROM news WHERE id=" + id + ";";
     connection.query(sql, function (error) {
-        if (error) {
-            return callback(false);
+        if (!error) {
+            var sqlGroups = "SELECT * FROM news_cansee WHERE news_id=?;";
+            connection.query(sqlGroups, [id], function (error, results) {
+               if (!error) {
+                   async.each(results, function (result, cb) {
+                      var sqlDelete = "DELETE FROM news_cansee WHERE id=?;";
+
+                      connection.query(sqlDelete, [result.id], function () {
+                         cb();
+                      });
+                   }, function () {
+                       return callback(false);
+                   });
+               } else {
+                   return callback(true);
+               }
+            });
         } else {
             return callback(true);
         }
     });
 }
 
-function updateNewsArticle(id, title, description, callback) {
+function updateNewsArticle(id, title, description, groups, callback) {
     var sql = "UPDATE news SET title=" + connection.escape(title) + ", description=" + connection.escape(description) + " WHERE id=" + id + ";";
     connection.query(sql, function (error, result) {
-        if (error) {
-            return callback(false);
+        if (!error) {
+            var sqlGroups = "SELECT * FROM news_cansee WHERE news_id=?;";
+
+            connection.query(sqlGroups, [id], function (error, results) {
+                if (!error) {
+                    async.each(results, function (result, cb) {
+                        console.log(result);
+
+                        var inGroups = false;
+
+                        for (var index in groups) {
+                            if (groups[index] == result.groups_name) {
+                                inGroups = true;
+                                break;
+                            }
+                        }
+
+                        if (!inGroups) {
+                            var sqlDelete = "DELETE FROM news_cansee WHERE id=?;";
+
+                            connection.query(sqlDelete, [result.id], function () {
+                                cb();
+                            });
+                        } else {
+                            cb();
+                        }
+                    }, function () {
+                        async.each(groups, function (group, cb) {
+                            console.log(group);
+
+                            var inGroups = false;
+
+                            for (var index in results) {
+                                if (group == results[index].groups_name) {
+                                    inGroups = true;
+                                    break;
+                                }
+                            }
+
+                            if (!inGroups) {
+                                var sqlAdd = "INSERT INTO news_cansee(news_id, group_name) VALUES(?, ?);";
+
+                                connection.query(sqlAdd, [id, group], function () {
+                                    cb();
+                                });
+                            } else {
+                                cb();
+                            }
+                        }, function () {
+                            return callback(true);
+                        });
+                    });
+                } else {
+                    return callback(true);
+                }
+            });
         } else {
             return callback(true);
         }
@@ -1740,6 +1817,9 @@ function defaultDatabase() {
     var newsTable = "CREATE TABLE IF NOT EXISTS news(id INT NOT NULL AUTO_INCREMENT, title VARCHAR(30) NOT NULL, description TEXT NOT NULL, date DATETIME NOT NULL, PRIMARY KEY (`id`));"
     connection.query(newsTable);
 
+    var newsCanSeeTable = "CREATE TABLE IF NOT EXISTS news_cansee(id INT NOT NULL AUTO_INCREMENT, news_id INT NOT NULL, group_name VARCHAR(30) NOT NULL, PRIMARY KEY (`id`));"
+    connection.query(newsCanSeeTable);
+
     var defaultNews = "INSERT INTO news(title, description, date) SELECT 'Scooly', 'A new school platform that can make everything possible. It contains lots of cool features.', NOW() FROM dual WHERE NOT EXISTS (SELECT title FROM news WHERE title='Scooly');";
     connection.query(defaultNews);
 
@@ -1764,7 +1844,6 @@ function defaultDatabase() {
 
     var mailOpenedTable = "CREATE TABLE IF NOT EXISTS mail_opened(id INT NOT NULL AUTO_INCREMENT, mail_id INT NOT NULL, user_id INT NOT NULL, opened INT(1) NOT NULL, PRIMARY KEY (`id`));";
     connection.query(mailOpenedTable);
-
 
     var classTable = "CREATE TABLE IF NOT EXISTS classes(id INT NOT NULL AUTO_INCREMENT, name VARCHAR(30) NOT NULL, PRIMARY KEY (`id`));";
     connection.query(classTable);
