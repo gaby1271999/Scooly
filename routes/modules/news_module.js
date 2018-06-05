@@ -64,8 +64,6 @@ function getArticles(callback) {
 
 function getNews(user_id, from, to, callback) {
     getArticles(function (results) {
-        console.log(results);
-
         if (results.length > 0) {
             var list = [];
 

@@ -2,8 +2,8 @@
     <div style="height: 5px; background-color: #00A65A;"></div>
     <p style="margin: 1% 0 0 3%; font-size: 25px">News</p>
 
-    <div style="text-align: center;">
-        <button style="display: none; text-align: center; border: none; background-color: #5bb75b; padding: 5px; color: white; margin-top: 1%;" id="add_article_button" onclick="addNewsArticle()">add article</button>
+    <div style="text-align: center; margin: 0 5% 0 5%;">
+        <button style="display: none; text-align: center; border: none; background-color: #5bb75b; padding: 5px; color: white; margin-top: 1%; width: 40%;" id="add_article_button" onclick="addNewsArticle()">add article</button>
     </div>
 
     <script>
@@ -32,7 +32,7 @@
         </script>
 
         <div id="load_more_articles_button" style="text-align: center;">
-            <button onclick="loadMoreNews()" style="border: none; background-color: #2F2F2F; color: white; padding: 5px; width: 50%; text-align: center; margin-top: 2.5%; outline: 0;">LoadMore</button>
+            <button onclick="loadMoreNews()" style="border: none; background-color: #2F2F2F; color: white; padding: 5px; width: 40%; text-align: center; margin-top: 2.5%; outline: 0;">LoadMore</button>
         </div>
     </div>
 </div>
@@ -112,7 +112,7 @@
 
             var editButtonElement = document.createElement('button');
             editButtonElement.setAttribute('class', 'news_edit_buttons');
-            editButtonElement.setAttribute('style', 'background-color: orange; border: none; padding: 5px; color: white; display: none; margin-right: 2.5%;');
+            editButtonElement.setAttribute('style', 'background-color: orange; border: none; padding: 5px; color: white; display: none; margin-right: 1%;');
             editButtonElement.setAttribute('onclick', 'openArticleEditor(' + data[index].id + ')');
             editButtonElement.innerHTML = 'Edit article';
 

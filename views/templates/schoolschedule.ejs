@@ -475,7 +475,6 @@
                         }
                     }
 
-                    //TODO
                     addAgendaItems(document.getElementById('agenda-item-cobweb-' + index), list);
                 }
             }
@@ -548,6 +547,7 @@
     }
 
     function newAgendaItem(jsonString) {
+
         var formElement = document.getElementById('agenda-edit-item-window-form');
         formElement.action = '/panel/addagendaitem';
 
@@ -633,7 +633,6 @@
 
         var optionElement = element.options[element.selectedIndex];
 
-        console.log(weekObject)
         for (var index in weekObject) {
             var object = weekObject[index];
 

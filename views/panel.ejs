@@ -76,7 +76,7 @@
                 padding: 5px;
                 border-bottom: 1px solid black;
                 color: white;
-
+                cursor: pointer;
             }
 
             .news-edit-dropdown-items:hover {
@@ -125,7 +125,7 @@
 
             var notTheTeacherPerms;
             var from = 0;
-            window.onload = function () {
+            $(document).ready(function(){
                 var itemOptionPerms = ['agenda.additem.note', 'agenda.additem.test', 'agenda.additem.task', 'agenda.additem.preparation', 'agenda.additem.materials', 'agenda.additem.topic'];
                 for (var index in itemOptionPerms) {
                     !function outer(index) {
@@ -153,7 +153,7 @@
                         document.getElementById('admin_page_button').style.display = 'initial';
                     }
                 });
-            }
+            });
 
             var clicks = 0;
 
@@ -398,7 +398,7 @@
         <!--
         <div id="turtle" style="top: 0; margin-left: 65%; position: absolute; margin-top: -10%; z-index: 99 !important;">
             <img style="transform: rotate(180deg); height: 40%; width: 40%;" src="/images/easteregg/IamSneakyTurtle.png">
-        </div> -->
+        </div>-->
 
         <div class="header" style="background-color: #3C8DBC; width: 100%; height: 75px; position: fixed; z-index: 10; padding: 0; top: 0;">
             <div class="logo">

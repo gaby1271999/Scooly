@@ -363,8 +363,6 @@ router.get('/getdocuments/:dir?', function (req, res) {
 
 router.get('/mydocuments/addfolder/:dir?', function (req, res) {
     if (req.session && req.session.user_id) {
-        console.log(req.params.dir == undefined ? '' : req.params.dir)
-
         mydocumentsManager.addFolder(req.session.user_id, (req.params.dir == undefined ? '' : req.params.dir), function () {
             res.end('success');
         });
@@ -398,6 +396,14 @@ router.post('/mydocuments/addfile/:dir?', function (req, res) {
                 res.end();
             });
         }
+    }
+});
+
+router.get('/mydocuments/delete/:dir?', function (req, res) {
+    if (req.session && req.session.user_id) {
+        mydocumentsManager.deleteFile(req.session.user_id, (req.params.dir == undefined ? '' : req.params.dir), function () {
+            res.end();
+        });
     }
 });
 

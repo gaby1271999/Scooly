@@ -78,10 +78,35 @@
         color: black;
         transition: 1s;
     }
+
+    #mydocuments_remove {
+        cursor: pointer;
+        padding: 5px;
+        display: block;
+        background-color: #1A2226;
+        color: white;
+    }
+
+    #mydocuments_remove:hover {
+        background-color: darkred;
+        color: white;
+        transition: 1s;
+    }
 </style>
 
 <script>
+    var mydocumentsRemove = false;
     var mydocumentsDirection;
+
+    document.addEventListener('click', function(e) {
+        e = e || window.event;
+        if (document.getElementById('mydocuments_remove_menu') != undefined) {
+            if (e.target.className != 'mydocuments_remove_menu') {
+                document.getElementById('mydocuments_remove_menu').parentNode.removeChild(document.getElementById('mydocuments_remove_menu'));
+                mydocumentsRemove = false;
+            }
+        }
+    }, false);
 
     function openMyDocuments(dir) {
         mydocumentsDirection = dir;
@@ -95,6 +120,7 @@
         $.getJSON(window.origin + '/json/getdocuments/' + encodeURIComponent(dir), function (files) {
             for (var index in files) {
                 var trElement = document.createElement('tr');
+                trElement.setAttribute('oncontextmenu', 'javascript: openMydocumentRemove(event, \'' + files[index].filename + '\'); return false;');
 
                 var td1Element = document.createElement('td');
                 var aElement = document.createElement('a');
@@ -119,6 +145,57 @@
                 tableElement.appendChild(trElement);
             }
         });
+    }
+
+    function openMydocumentRemove(e, filename) {
+        if (!mydocumentsRemove) {
+            var posx = 0;
+            var posy = 0;
+            if (!e) var e = window.event;
+
+            if (e.pageX || e.pageY) {
+                posx = e.pageX;
+                posy = e.pageY;
+            }
+            else if (e.clientX || e.clientY) {
+                posx = e.clientX;
+                posy = e.clientY;
+            }
+
+
+            var divElement = document.createElement('div');
+            divElement.setAttribute('id', 'mydocuments_remove_menu');
+            divElement.setAttribute('style', 'left: ' + posx + 'px; top: ' + posy + 'px; max-width: 400px; background-color: white; border: 2px solid black; border-radius: 10px; position: absolute; z-index: 99999; overflow: hidden;');
+
+            divElement.innerHTML = '<a id="mydocuments_remove" onclick="removeMyDocument(\'' + filename + '\')">' + filename + '</a>'
+
+            document.body.appendChild(divElement);
+
+            mydocumentsRemove = true;
+        }
+    }
+
+    function removeMyDocument(filename) {
+        var path = encodeURIComponent(mydocumentsDirection + '/' + filename);
+
+        var element = document.getElementById('mydocuments_remove_menu');
+
+        element.parentNode.removeChild(element);
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('loader_window').style.display = 'initial';
+
+        $.ajax({
+            url: window.origin + '/json/mydocuments/delete/' + path,
+            type: 'GET',
+            success: function () {
+                openMyDocuments(mydocumentsDirection);
+
+                document.getElementById('background_overlay').style.display = 'none';
+                document.getElementById('loader_window').style.display = 'none';
+
+                mydocumentsRemove = false;
+            }
+        })
     }
 
     function openAddFolderWindow() {

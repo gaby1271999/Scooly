@@ -99,6 +99,19 @@ function addFolder(user_id, dir, callback) {
     callback();
 }
 
+function deleteFile(user_id, dir, callback) {
+    var path = direction + '/' + user_id + dir;
+
+    if (fs.existsSync(path)) {
+        fse.remove(path, function (error) {
+            callback();
+        });
+    } else {
+        callback();
+    }
+}
+
 exports.getDocuments = getDocuments;
 exports.getPath = getPath;
 exports.addFolder = addFolder;
+exports.deleteFile = deleteFile;
