@@ -1,6 +1,8 @@
 var express = require('express');
+var path = require('path');
 var database = require('./database');
 var profile = require('./utils/profile_utils');
+var mainFolder = require(__dirname + '/utils/main_folder');
 var router = express.Router();
 
 router.post('/password', function(req, res) {
@@ -19,11 +21,13 @@ router.post('/password', function(req, res) {
 
 router.post('/avatar', function(req, res) {
     if (req.session && req.session.user_id) {
-        var uploadDirection = __dirname.replace("routes", "private/uploads/" + req.files.file.name);
+        var uploadDirection = path.join(mainFolder.mainFolder(), "private/uploads/" + req.files.file.name);
 
         req.files.file.mv(uploadDirection, function (error) {
             console.log(error);
         });
+
+        console.log(parseInt(req.body.cropx), parseInt(req.body.cropy), parseInt(req.body.cropw), parseInt(req.body.croph))
 
         profile.setProfileImage(req.session.user_id, uploadDirection, req.files.file.name, parseInt(req.body.cropx), parseInt(req.body.cropy), parseInt(req.body.cropw), parseInt(req.body.croph));
     }

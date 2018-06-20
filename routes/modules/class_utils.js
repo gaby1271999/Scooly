@@ -1,12 +1,13 @@
 var async = require('async');
 var fs = require('fs');
 var fse = fs = require('fs-extra');
-var path = require('path');
+var p = require('path');
 
 var database = require(__dirname.replace('modules', 'database'));
+var mainFolder = require(__dirname.replace('modules', '/utils/main_folder'));
 var scheduleManager = require('./schedule_manager');
 
-var direction = __dirname.replace('routes\\modules', 'private/subjects');
+var direction = p.join(mainFolder.mainFolder(), 'private/subjects');
 function getFiles(user_id, path, callback) {
     database.getUserClassName(user_id, function (error, class_name) {
         if (!error) {
@@ -199,7 +200,7 @@ function getSubFiles(fName, dir, filePath, canSee, callback) {
                 }
 
                 if (canSee || visible) {
-                    if (path.extname(file).length == 0) {
+                    if (p.extname(file).length == 0) {
                         getSubFiles(file, dir + '/' + file, filePath + '/' + file, canSee, function (newDirFiles) {
                             database.getSubjectNote(teacherId, filePath + '/' + file, function (error, note) {
                                 if (note != undefined) {
@@ -263,7 +264,7 @@ function sizeToString(inbytes) {
 }
 
 function getDocuments(subject, id, className, callback) {
-    var dir = __dirname.replace('routes\\modules', 'private/subjects');
+    var dir = p.join(mainFolder.mainFolder(), 'private/subjects');
 
     if (fs.existsSync(dir + '/' + id + '/' + subject)) {
         dir += '/' + id + '/' + subject + '/' + className;
@@ -274,7 +275,7 @@ function getDocuments(subject, id, className, callback) {
 
                 async.each(files, function (file, cb) {
                     database.getVisability(id + '/' + subject + '/' + className + '/' + file, function (error, result) {
-                        if (path.extname(file).length == 0) {
+                        if (p.extname(file).length == 0) {
                             getSubFiles(file, dir + '/' + file, id + '/' + subject + '/' + className + '/' + file, true, function (object) {
                                 dirFiles[dirFiles.length] = object;
                                 var size = sizeToString(fs.statSync(dir + '/' + file).size);
@@ -357,7 +358,7 @@ function getDocuments(subject, id, className, callback) {
                                         database.getVisability(teacherId + '/' + subject + '/' + className + '/' + file, function (error, result) {
                                             if (result != undefined) {
                                                 if (result.visability) {
-                                                    if (path.extname(file).length == 0) {
+                                                    if (p.extname(file).length == 0) {
                                                         getSubFiles(file, dir + '/' + file, teacherId + '/' + subject + '/' + className + '/' + file, false, function (object) {
                                                             database.getSubjectNote(teacherId, teacherId + '/' + subject + '/' + className + '/' + file, function (error, note) {
                                                                 if (note != undefined) {
@@ -425,7 +426,7 @@ function getDocuments(subject, id, className, callback) {
 }
 
 function getDocumentPath(userId, subject, filePath, callback) {
-    var dir = __dirname.replace('routes\\modules', 'private/subjects');
+    var dir = p.join(mainFolder.mainFolder(), 'private/subjects');
 
     if (fs.existsSync(dir + '/' + userId)) {
         dir += '/' + userId + '/' + subject + '/' + filePath;
@@ -437,7 +438,6 @@ function getDocumentPath(userId, subject, filePath, callback) {
         }
     } else {
         database.getUserClassName(userId, function (error, className) {
-            console.log(className);
             scheduleManager.getStudentWeek(className, function (schedule) {
                 var foundTt = false;
 
@@ -451,7 +451,6 @@ function getDocumentPath(userId, subject, filePath, callback) {
                             if (!error) {
                                 dir += '/' + id + '/' + subject + '/' + className + '/' + filePath;
 
-                                console.log(dir);
                                 return callback(null, dir);
                             }
 
@@ -471,7 +470,7 @@ function getDocumentPath(userId, subject, filePath, callback) {
 }
 
 function uploadNewFile(id, dir, filePath, callback) {
-    var subjectDir = __dirname.replace('routes\\modules', 'private/subjects') + '/' + id;
+    var subjectDir = p.join(mainFolder.mainFolder(), 'private/subjects') + '/' + id;
 
     if (fs.existsSync(subjectDir)) {
         subjectDir += '/' + dir;
@@ -489,7 +488,7 @@ function uploadNewFile(id, dir, filePath, callback) {
 }
 
 function addFolder(path, callback) {
-    var dir = __dirname.replace('routes\\modules', 'private/subjects');
+    var dir = p.join(mainFolder.mainFolder(), 'private/subjects');
 
     var argsPath = path.split('/');
 

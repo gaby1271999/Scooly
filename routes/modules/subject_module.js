@@ -1,10 +1,11 @@
 var async = require('async');
 var fs = require('fs');
 var fse = fs = require('fs-extra');
-var path = require('path');
+var p = require('path');
+var mainFolder = require(__dirname.replace('modules', '/utils/main_folder'));
 var database = require(__dirname.replace('modules', 'database'));
 
-var direction = __dirname.replace('routes\\modules', 'private/subjects');
+var direction = p.join(mainFolder.mainFolder(), 'private/subjects');
 
 function deleteContents(user_id, path, callback) {
     async.series([

@@ -71,7 +71,7 @@
                     <form style="margin-left: 20px;" method="POST" action="/profile_settings/avatar" enctype="multipart/form-data">
                         <p>Your new photo</p>
                         <input type="file" name="file" value="Your image" accept="image/jpeg|image/png|image/gif" onchange="readURL(this)"><br>
-                        <img id="avatar_image" style="width: auto; height: 200px;" src="#"/>
+                        <img id="avatar_image" src="#"/>
                         <input type="hidden" name="cropx" id="cropx" value="0" />
                         <input type="hidden" name="cropy" id="cropy" value="0" />
                         <input type="hidden" name="cropw" id="cropw" value="0" />
@@ -103,6 +103,8 @@
                             }
 
                             function setOnChange(c) {
+                                console.log(c);
+
                                 document.getElementById("cropx").value = c.x;
                                 document.getElementById("cropy").value = c.y;
                                 document.getElementById("cropw").value = c.w;

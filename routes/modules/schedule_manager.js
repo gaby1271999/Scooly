@@ -1,9 +1,13 @@
 var excel = require('exceljs');
 var fs = require('fs');
+var p = require('path');
 var config = require('yaml-config');
 
-var dir = __dirname.replace('routes\\modules', 'private/schedules');
-var schedules = config.readConfig(__dirname.replace("routes\\modules", "private/configs/config.yml"), "schedules");
+var mainFolder = require(__dirname.replace('modules', '/utils/main_folder'));
+
+
+var dir = p.join(mainFolder.mainFolder(), 'private/schedules');
+var schedules = config.readConfig(p.join(mainFolder.mainFolder(), "private/configs/config.yml"), "schedules");
 var scheduleObject = {};
 
 
@@ -64,12 +68,11 @@ function changeActivatedSchedule(name, state) {
         }
     }
 
-    config.updateConfig(schedules, __dirname.replace("routes\\modules", "private/configs/config.yml"), "schedules");
+    config.updateConfig(schedules, p.join(mainFolder.mainFolder(), "private/configs/config.yml"), "schedules");
 }
 
 function setupSchedules() {
     getActivatedFiles(function (files) {
-        console.log(files);
 
         files.forEach(function (file) {
             var workbook = new excel.Workbook();

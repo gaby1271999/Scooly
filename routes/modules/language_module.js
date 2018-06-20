@@ -1,7 +1,9 @@
 var fs = require('fs');
+var p = require('path');
+var mainFolder = require(__dirname.replace('modules', '/utils/main_folder'));
 
 function getFile(request, callback) {
-    var dir = __dirname.replace('routes\\modules', 'public/languages');
+    var dir = p.join(mainFolder.mainFolder(), 'public/languages');
 
     fs.readdir(dir, function (error, files) {
         if (!error) {

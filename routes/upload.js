@@ -2,12 +2,14 @@ var express = require('express');
 var router = express.Router();
 var database = require('./database');
 var fs = require('fs');
+var p = require('path');
 var AdmZip = require('adm-zip');
 var async = require('async');
+var mainFolder = require(__dirname + '/utils/main_folder');
 
-var direction = __dirname.replace("routes", "private/mails/temp");
-var mailDirection = __dirname.replace("routes", "private/mails/mails");
-var zipsDirection = __dirname.replace("routes", "private/zips");
+var direction = p.join(mainFolder.mainFolder(), "private/mails/temp");
+var mailDirection = p.join(mainFolder.mainFolder(), "private/mails/mails");
+var zipsDirection = p.join(mainFolder.mainFolder(), "private/zips");
 
 router.get('/remove/:name', function(req, res) {
     if (req.session && req.session.user_id) {

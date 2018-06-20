@@ -4,6 +4,8 @@ var database = require('./database.js');
 var permissions = require('./permission.js');
 var scheduleManager = require('./modules/schedule_manager.js');
 var weekPlanning = require('./utils/week_planning.js');
+var mainFolder = require(__dirname + '/utils/main_folder');
+
 
 /* GET home page. */
 router.get('/', function(req, res) {
@@ -80,9 +82,7 @@ router.get('/addtoclass/:username/:class_name?', function (req, res) {
 
 router.get('/deleteuser/:username', function (req, res) {
     if (req.session && req.session.user_id) {
-        console.log('test');
         database.deleteUser(req.params.username, function () {
-            console.log('test2');
             res.end();
         });
     }

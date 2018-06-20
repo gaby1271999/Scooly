@@ -1,9 +1,11 @@
 var database = require(__dirname.replace('utils', '') + 'database');
 var fs = require('fs');
+var p = require('path');
 var async = require('async');
+var mainFolder = require(__dirname + '/main_folder');
 
-var direction = __dirname.replace("routes\\utils", "private/mails/temp");
-var mailDirection = __dirname.replace("routes\\utils", "private/mails/mails");
+var direction = p.join(mainFolder.mainFolder(), "private/mails/temp");
+var mailDirection = p.join(mainFolder.mainFolder(), "private/mails/mails");
 
 
 function updateAttachment(mail_id, user_id, callback) {

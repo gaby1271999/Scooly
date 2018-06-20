@@ -1,9 +1,11 @@
 var async = require('async');
 var fs = require('fs');
 var fse = fs = require('fs-extra');
-var path = require('path');
+var p = require('path');
+var mainFolder = require(__dirname.replace('modules', '/utils/main_folder'));
 
-var direction = __dirname.replace('routes\\modules', 'private/mydocuments');
+
+var direction = p.join(mainFolder.mainFolder(), 'private/mydocuments');
 
 
 function getDocuments(user_id, dir, callback) {

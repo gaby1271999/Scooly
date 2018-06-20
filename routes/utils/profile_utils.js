@@ -1,27 +1,10 @@
 var fs = require('fs');
-var path = require('path');
+var p = require('path');
 var Jimp = require("jimp");
-
-function mainFolder() {
-    var list = __dirname.split(path.sep);
-
-    var newPath = '';
-    for (var index in list) {
-        if (index != 0) {
-            newPath += '/';
-        }
-
-        newPath += list[index];
-    }
-
-    return newPath;
-}
+var mainFolder = require(__dirname + '/main_folder');
 
 function setProfileImage(id, newAvatarDirection, fileName, x, y, w, h) {
-    //var direction = __dirname.replace("routes/utils", "private/images/profiles/" + id);
-
-    var direction = path.join(mainFolder().replace("routes/utils", ''), "private/images/profiles/" + id);
-    console.log(direction)
+    var direction = p.join(mainFolder.mainFolder(), "private/images/profiles/" + id);
 
     if (!fs.existsSync(direction)) {
         fs.mkdirSync(direction);
