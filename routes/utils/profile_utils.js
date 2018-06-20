@@ -1,8 +1,27 @@
 var fs = require('fs');
+var path = require('path');
 var Jimp = require("jimp");
 
+function mainFolder() {
+    var list = __dirname.split(path.sep);
+
+    var newPath = '';
+    for (var index in list) {
+        if (index != 0) {
+            newPath += '/';
+        }
+
+        newPath += list[index];
+    }
+
+    return newPath;
+}
+
 function setProfileImage(id, newAvatarDirection, fileName, x, y, w, h) {
-    var direction = __dirname.replace("routes/utils", "private/images/profiles/" + id);
+    //var direction = __dirname.replace("routes/utils", "private/images/profiles/" + id);
+
+    var direction = path.join(mainFolder().replace("routes/utils", ''), "private/images/profiles/" + id);
+    console.log(direction)
 
     if (!fs.existsSync(direction)) {
         fs.mkdirSync(direction);

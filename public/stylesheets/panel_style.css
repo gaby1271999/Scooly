@@ -180,9 +180,14 @@
 
 .alerts {
     float: right;
-    width: 20%;
+    width: calc(100% - 300px);
     height: 75px;
     text-align: right;
+}
+
+.alerts a {
+    margin-right: 15px;
+    cursor: pointer;
 }
 
 .alerts:before {

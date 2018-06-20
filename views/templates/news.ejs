@@ -108,23 +108,9 @@
             var divElement = document.createElement('div');
             divElement.setAttribute('class', 'article');
             divElement.setAttribute('id', 'article_' + data[index].id);
-            divElement.innerHTML = '<p style="font-size: 18px">' + data[index].title + '</p><div>' + data[index].description + '</div><p style="text-align: right; font-size: 10px">' + data[index].date + '</p>';
-
-            var editButtonElement = document.createElement('button');
-            editButtonElement.setAttribute('class', 'news_edit_buttons');
-            editButtonElement.setAttribute('style', 'background-color: orange; border: none; padding: 5px; color: white; display: none; margin-right: 1%;');
-            editButtonElement.setAttribute('onclick', 'openArticleEditor(' + data[index].id + ')');
-            editButtonElement.innerHTML = 'Edit article';
-
-            divElement.appendChild(editButtonElement);
-
-            var deleteButtonElement = document.createElement('button');
-            deleteButtonElement.setAttribute('class', 'news_delete_buttons');
-            deleteButtonElement.setAttribute('style', 'background-color: red; border: none; padding: 5px; color: white; display: none;');
-            deleteButtonElement.setAttribute('onclick', 'removeArticle(' + data[index].id + ')');
-            deleteButtonElement.innerHTML = 'Remove article';
-
-            divElement.appendChild(deleteButtonElement);
+            divElement.innerHTML = '<p style="font-size: 18px">' + data[index].title + '</p>' +
+                '<div>' + data[index].description + '</div>' +
+                '<p style="text-align: right; font-size: 10px">' + data[index].date + '</p>';
 
             newsElement.insertBefore(divElement, document.getElementById('load_more_articles_button'));
         }

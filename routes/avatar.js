@@ -10,9 +10,9 @@ router.get('/:username', function(req, res) {
     if (req.session && req.session.user_id) {
         database.getUserId(req.params.username, function (error, user_id) {
             if (!error) {
-                fs.readdir(path.concat(req.params.id), function (error, files) {
+                fs.readdir(path.concat(user_id), function (error, files) {
                     if (!error) {
-                        res.sendFile(path.concat(req.params.id) + "/" + files[0]);
+                        res.sendFile(path.concat(user_id) + "/" + files[0]);
                     } else {
                         res.sendFile(path + "/unknown.jpg");
                     }

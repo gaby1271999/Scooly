@@ -55,12 +55,15 @@
     }
 
     #subject_remove {
-        background-color: white;
-        color: black;
+        cursor: pointer;
+        padding: 5px;
+        display: block;
+        background-color: #1A2226;
+        color: white;
     }
 
     #subject_remove:hover {
-        background-color: indianred;
+        background-color: darkred;
         color: white;
         transition: 1s;
     }
@@ -68,7 +71,7 @@
 
 <div class="module" id="subject" style="background-color: white; border-radius: 10px; margin: 3% 3% 0 3%; min-height: 200px; overflow: hidden; display: none">
     <div style="height: 5px; background-color: #00A65A;"></div>
-    <p style="margin: 1% 0 0 3%; font-size: 25px"><%= object.schoolschedule %></p>
+    <p style="margin: 1% 0 0 3%; font-size: 25px"><%= object.subjects %></p>
 
     <div id="subjects" style="display: initial;">
         <ul id="subject_list" style="list-style-type: none; border-radius: 10px; border-top: 2px solid #00A65A; border-left: 2px solid #00A65A; border-bottom: 2px solid #006335; border-right: 2px solid #006335;">
@@ -159,6 +162,15 @@
 </div>
 
 <script>
+    document.addEventListener('click', function(e) {
+        e = e || window.event;
+        if (document.getElementById('subject_remove_window') != undefined) {
+            if (e.target.className != 'subject_remove_window') {
+                document.getElementById('subject_remove_window').parentNode.removeChild(document.getElementById('subject_remove_window'));
+            }
+        }
+    }, false);
+
     var subjectNoteAdd;
     hasPermission("subject.note.add" , function (perms) {
         subjectNoteAdd = perms;
@@ -195,11 +207,9 @@
 
             var divElement = document.createElement('div');
             divElement.setAttribute('id', 'subject_remove_window');
-            divElement.setAttribute('style', 'left: ' + posx + 'px; top: ' + posy + 'px; min-height: 30px; max-width: 400px; background-color: white; border: 2px solid black; border-radius: 10px; position: absolute; z-index: 99999; overflow: hidden;');
-            divElement.innerHTML = '<a id="subject_remove" onclick="removeFile(\'' + filename + '\')" style="font-size: 30px; padding: 10px; cursor: pointer; display: block;">Remove: ' + filename + '</a>';
+            divElement.setAttribute('style', 'left: ' + posx + 'px; top: ' + posy + 'px; max-width: 400px; background-color: white; border: 2px solid black; border-radius: 10px; position: absolute; z-index: 99999; overflow: hidden;');
+            divElement.innerHTML = '<a id="subject_remove" onclick="removeFile(\'' + filename + '\')">Remove: ' + filename + '</a>';
             document.body.appendChild(divElement);
-
-            document.getElementById('background_overlay').style.display = 'initial';
         }
     }
 
@@ -305,6 +315,8 @@
                 aNoteElement.setAttribute('style', 'cursor: pointer; color: black;');
 
                 if (file.note != undefined) {
+                    console.log(file.note);
+
                     aNoteElement.setAttribute('onclick', 'openNote(\'' + subject + '\', \'' + className + '\', \'' + dir + '\', \'' + dir + '/' + file.name + '\', \'' + file.name + '\')');
                     aNoteElement.innerHTML = '<span class="subject_fs_item">open note</span>';
                 } else {
@@ -452,7 +464,7 @@
             document.getElementById('subject-note-add-id').value = note.id;
             document.getElementById('subject-note-add-title').value = note.title;
             document.getElementById('subject-note-add-description').innerHTML = note.description;
-            if (note.visible) {
+            if (note.public == 1) {
                 document.getElementById('subject-note-add-checkbox').setAttribute('checked', '');
             }
 
@@ -524,6 +536,12 @@
     }
 
     function removeFile(filename) {
+        var element = document.getElementById('subject_remove_window');
+
+        element.parentNode.removeChild(element);
+        document.getElementById('background_overlay').style.display = 'initial';
+        document.getElementById('loader_window').style.display = 'initial';
+
         $.ajax({
             url: window.origin + '/json/deletesubjectfile/' + encodeURIComponent(path) + '&' + encodeURIComponent(filename),
             type: 'GET',
@@ -531,7 +549,9 @@
                 var args = path.split('/');
 
                 openClassSubject(args[0], args[1]);
-                closePopup();
+
+                document.getElementById('background_overlay').style.display = 'none';
+                document.getElementById('loader_window').style.display = 'none';
             }
         });
     }

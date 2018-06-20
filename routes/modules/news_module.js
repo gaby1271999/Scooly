@@ -76,24 +76,25 @@ function getNews(user_id, from, to, callback) {
                     cb();
                 });
             }, function () {
-                if (!((to - from) < 0) && !((to - from) > 5)) {
-                    var sortedResults = list.sort(function (a, b) {
-                        var aDate = toDate(a.date);
-                        var bDate = toDate(b.date);
+                if (list.length > from) {
+                    if (!((to - from) < 0) && !((to - from) > 5)) {
+                        var sortedResults = list.sort(function (a, b) {
+                            var aDate = toDate(a.date);
+                            var bDate = toDate(b.date);
 
-                        return bDate-aDate;
-                    });
+                            return bDate - aDate;
+                        });
 
-                    var newList = [];
-                    for (var index in sortedResults) {
-                        if (index >= from && index <= to) {
-                            newList[newList.length] = sortedResults[index];
-                        }
+                        var newList = sortedResults.slice(from, ++to);
+
+                        return callback(newList);
                     }
-
-                    return callback(newList);
+                } else {
+                    callback([]);
                 }
             });
+        } else {
+            callback([]);
         }
     });
 }

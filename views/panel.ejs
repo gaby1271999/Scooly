@@ -408,7 +408,7 @@
             </div>
 
             <div class="alerts">
-                <a style="margin-right: 10%;" onclick="openLanguageMenu()">
+                <a onclick="openLanguageMenu()">
                     <div style="position: relative; display: inline-block;">
                         <img id="language_icon" class="logo-img">
                     </div>
@@ -430,8 +430,8 @@
                     </script>
                 </a>
                 <!--<img class="logo-img" style="margin-right: 10%" src="/images/icons/appointment_icon.png">-->
-                <a style="cursor: pointer;" onclick="changeModule('messages')">
-                    <div style="position: relative; display: inline-block; margin-right: 10%;">
+                <a onclick="changeModule('messages')">
+                    <div style="position: relative; display: inline-block;">
                         <img class="logo-img" src="/images/icons/message_icon.png">
                         <div id="header_mail_closed" style="position: absolute; bottom: -5px; right: -5px; background-color: red; height: 20px; width: 20px; opacity: 0.8; border-radius: 50%; color: white; text-align: center; display: table;">
                             <script>
@@ -458,7 +458,7 @@
                         </div>
                     </div>
                 </a>
-                <a onclick="logout()" style="cursor: pointer;"><img class="logo-img" style="margin-right: 10%" src="/images/icons/logout_icon.png"></a>
+                <a onclick="logout()"><img class="logo-img" src="/images/icons/logout_icon.png"></a>
             </div>
         </div>
 
@@ -524,6 +524,7 @@
             <div style="position: fixed; top: 75px; left: 300px; right: 0; bottom: 0; background: rgba(0,0,0,0.75);">
             </div>
         </div>
+
 
         <div id="news_item_edit_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
             <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
@@ -620,7 +621,7 @@
         <div id="subject_addfolder_window" style="position: fixed; top: 125px; left: 350px; right: 50px; margin: 3% 3% 0 3%; min-width: 750px; max-height: 500px; display: none; z-index: 99999;">
             <div style="background-color: white; border: 5px solid #00A65A; overflow-y: scroll; z-index: 99999;">
                 <div style="margin: 1% 3% 1% 3%;">
-                    <h3>Upload a document</h3>
+                    <h3>Upload a folder</h3>
 
                     <form id="subject_folder_form" method="POST" action="/panel/addfolder">
                         <input type="text" id="subject_folder_path" name="path" style="display: none;">
