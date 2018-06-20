@@ -470,7 +470,6 @@
                                 color = 'lightgreen';
                             }
 
-
                             list[list.length] = {color: color, hour: hourOfDate(deliveryDate)};
                         }
                     }
@@ -495,7 +494,6 @@
             marginLeft = Math.cos(degreesToRadians(angle))*marginLeft;
 
             element.setAttribute('style', 'position: absolute; top: 42.5%; left: 42.5%; height: 15%; width: 15%; margin: ' + marginTop + '% auto auto ' + marginLeft + '%; background-color: ' + obj.color + '; border-radius: 50%; color: white; text-align: center; display: table;');
-            console.log(obj.hour);
             element.innerHTML = '<span style="display: table-cell; vertical-align: middle;">' + obj.hour + '</span>';
             parent.appendChild(element);
 
@@ -510,7 +508,7 @@
 
     function hourOfDate(date) {
         for (var day in weekPlanning) {
-            if (dayToNumber(day) == date.getDay()-1) {
+            if (dayToNumber(day) == date.getDay()) {
                 for (var index in weekPlanning[day]) {
                     if (betweenTime(date, weekPlanning[day][index])) {
                         return (++index);
